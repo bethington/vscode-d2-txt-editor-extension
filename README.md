@@ -1,151 +1,192 @@
-# **Diablo II .txt Editor for VS Code**
+# Diablo II .txt Editor
 
-Experience a whole new way to work with Diablo II data files right inside VS Code. This extension transforms your tab-delimited text files into an interactive, spreadsheet-like experience—making it effortless to view, edit, and navigate your game data with precision and speed.
+[![Version](https://img.shields.io/visual-studio-marketplace/v/bethington.vscode-d2-txt-editor-extension?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=bethington.vscode-d2-txt-editor-extension)
+[![Downloads](https://img.shields.io/visual-studio-marketplace/d/bethington.vscode-d2-txt-editor-extension?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=bethington.vscode-d2-txt-editor-extension)
+[![Rating](https://img.shields.io/visual-studio-marketplace/r/bethington.vscode-d2-txt-editor-extension?style=flat-square)](https://marketplace.visualstudio.com/items?itemName=bethington.vscode-d2-txt-editor-extension)
 
----
+A powerful VS Code extension that transforms Diablo II's tab-delimited .txt game data files into an interactive, spreadsheet-like editing experience. Perfect for modders, game developers, and anyone working with Diablo II data files.
 
-## Screenshots
+## 🚀 Features
 
-![Dark Theme Screenshot](images/Screenshot_dark.png)
-![Light Theme Screenshot](images/Screenshot_light.png)
+### Core Functionality
 
----
+- **📊 Interactive Table View** - View and edit Diablo II data files in a beautiful spreadsheet interface
+- **🎨 Rainbow Column Colors** - Each column has a distinct color for easy visual tracking across rows
+- **✏️ In-Place Editing** - Double-click any cell to edit directly, or press Enter on selected cells
+- **⌨️ Full Keyboard Navigation** - Arrow keys, Tab/Shift+Tab, Enter, and Escape for efficient editing
+- **📋 Smart Copy/Paste** - Select and copy ranges of cells with proper tab-delimited formatting
 
-## Why This Editor?
+### Advanced Features
 
-Working with tab-delimited data files shouldn't be a chore. With this editor, you get a powerful and intuitive interface for managing your Diablo II game data files.
+- **🔍 Find & Replace** - Built-in search with highlighting (`Ctrl/Cmd + F`)
+- **📑 Sticky Headers** - Column headers stay visible while scrolling
+- **🔄 Column Sorting** - Click headers to sort data ascending/descending
+- **➕ Add/Remove Columns** - Right-click context menu for column management
+- **🎯 Multi-Selection** - Click and drag or Shift+click to select cell ranges
+- **🌙 Theme Support** - Automatically adapts to VS Code's light/dark themes
 
----
+### File Support
 
----
+Supports all Diablo II data files including:
 
-## Supported File Types
+- `weapons.txt`, `armor.txt`, `misc.txt`
+- `skills.txt`, `missiles.txt`, `monstats.txt`
+- `uniqueitems.txt`, `setitems.txt`, `runes.txt`
+- And 60+ other Diablo II data files
 
-This extension supports:
+## 📸 Screenshots
 
-- All Diablo II data files (*.txt files like items.txt, weapons.txt, etc.)
+| Dark Theme | Light Theme |
+|------------|-------------|
+| ![Dark Theme](images/Screenshot_dark.png) | ![Light Theme](images/Screenshot_light.png) |
 
-These files are opened in an interactive grid editor optimized for tab-delimited data.
+## 🛠️ Installation
 
----
+1. Open VS Code
+2. Press `Ctrl+Shift+X` (Windows/Linux) or `Cmd+Shift+X` (macOS) to open Extensions
+3. Search for "Diablo II .txt Editor"
+4. Click Install
 
-## Key Features
+## 📖 Usage
 
-- **Direct In-Place Editing:** Click on any cell to edit its content seamlessly. Your changes can be saved immediately to the file, ensuring data integrity without extra steps.
-- **Smart Column Sizing & Dynamic Color Coding:** Columns automatically adjust to fit content while being visually distinguished by data type. Whether it's boolean, date, integer, float, or text, each column gets its own adaptive color that adjusts for light and dark themes.
-- **Sticky Headers & Fluid Navigation:** Keep your header row always visible as you scroll. Effortlessly move through cells using intuitive keyboard shortcuts like `Tab`, `Shift + Tab`, and arrow keys—just like a full-featured spreadsheet.
-- **Efficient Multi-Cell Selection & Clipboard Integration:** Select a range of cells with click-and-drag and copy them as well-formatted tab-delimited data using `Ctrl/Cmd + C`.
-- **Robust Data Handling:** Leveraging the power of [Papa Parse](https://www.papaparse.com/), the extension handles complex tab-delimited structures, special characters, and various data types gracefully.
-- **Theme-Optimized Interface:** Whether you prefer light or dark mode, the editor automatically adapts its styles for an optimal viewing experience.
-- **Enhanced Keyboard Navigation:** Navigate cells with Tab/Shift+Tab and use keyboard shortcuts for quick editing, saving, selection, and full-table `Ctrl/Cmd + A` select-all.
-- **Diablo II Game Data Support:** Specifically optimized for handling Diablo II's tab-delimited .txt game data files.
-- **Add/Delete Columns:** Right-click any cell to add a column left or right, or remove the selected column.
-- **Edit Empty Files:** Create or open an empty file and start typing immediately.
-- **Column Sorting:** Click column headers to sort ascending or descending.
-- **Custom Font Selection:** Choose a font from a dropdown or inherit VS Code's default.
-- **Find & Highlight:** Built-in find widget helps you search for text within your CSV with real-time highlighting and navigation through matches.
-- **Preserved TSV Integrity:** All modifications respect TSV formatting—no unwanted extra characters or formatting issues.
-- **Optimized for Performance:** Designed for medium-sized datasets, ensuring a smooth editing experience without compromising on functionality.
-- **Large File Support:** Loads big TSVs in chunks so even large datasets open quickly.
+### Getting Started
 
----
+1. Open any Diablo II .txt file in VS Code
+2. The extension automatically opens supported files in table view
+3. Start editing immediately!
 
-## Compatibility
+### Keyboard Shortcuts
 
-This extension is built for VS Code **1.70.0** and later. It has been tested with
-Cursor (built on VS Code 1.99) and the latest VS Code releases (1.102).
+| Action | Shortcut |
+|--------|----------|
+| Edit cell | `Enter` or double-click |
+| Navigate cells | `Arrow keys` |
+| Next/Previous cell | `Tab` / `Shift+Tab` |
+| Save | `Ctrl/Cmd+S` |
+| Find | `Ctrl/Cmd+F` |
+| Select all | `Ctrl/Cmd+A` |
+| Copy selection | `Ctrl/Cmd+C` |
+| Switch to text editor | `Alt+E` |
 
-## Getting Started
+### Context Menu Options
 
-### 1. Install the Extension
+Right-click on any cell to:
 
-- Open Visual Studio Code.
-- Go to the Extensions view (`Ctrl+Shift+X` or `Cmd+Shift+X` on macOS).
-- Search for **CSV** and click **Install**.
+- Add column (left/right)
+- Delete column
+- Add row (above/below)
+- Delete row
+- Sort column (A-Z / Z-A)
 
-### 2. Open a Diablo II Data File
+## ⚙️ Configuration
 
-- Open any supported Diablo II .txt file in VS Code.
-- The file will automatically load, presenting your data in an interactive grid view.
+The extension can be configured through VS Code settings:
 
-### 3. Edit and Navigate
-
-- **Click to Edit:** Double-click any cell to edit its content. Simply press `Enter` or click outside the cell to save.
-- **Keyboard Navigation:** Use `Tab`/`Shift+Tab` to move horizontally between cells. Navigation also wraps to the next or previous row as needed.
-- **Multi-Cell Selection:** Click and drag or use `Shift + Click` to select multiple cells, then copy them as CSV using `Ctrl/Cmd + C`.
-- **Find & Highlight:** Press `Ctrl/Cmd + F` to activate the find widget and quickly locate data within your CSV.
-
----
-
-## Planned Improvements
-
-- **Row Insertion/Deletion:** Quickly add or remove rows without leaving the editor (coming soon).
-
----
-
-## Release Notes
-
-### v1.1.2
-
-- **Fixed:** fontFamily
-
-### v1.1.0
-
-- **New:** Column sorting by clicking header labels.
-- **Added:** Font selection dropdown that honors VS Code font settings.
-- **Added:** Ability to create and edit empty CSV files.
-- **Improved:** Large CSV files load in 1000-row chunks for better performance.
-- **Enhanced:** `Ctrl/Cmd + A` now selects all cells in the grid.
-- **Fixed:** Correct row indexing when the header row is disabled.
-- **Improved:** Safer rendering for cells containing HTML-like text.
-
-### v1.0.6
-
-- **New:** Multi-cell selection with intuitive `Shift + Click` support.
-- **Enhanced:** Clipboard integration for copying selected cells as clean, CSV-formatted text.
-- **Improved:** Navigation and editing, including better handling of special characters like quotes and commas.
-- **Added:** Advanced column type detection with dynamic color-coded highlighting.
-- **Refined:** Update mechanism for external document changes without interrupting your workflow.
-- **Configurable:** Added `csv.cellPadding` setting to adjust table cell padding.
-
-### v1.0.2
-
-- **Improved:** Seamless activation of editing mode on double-click.
-- **Fixed:** `Tab` and `Shift + Tab` navigation issues, ensuring smooth cell-to-cell movement.
-- **Updated:** Sticky header styling now consistently matches the active theme.
-
-### v1.0.0
-
-- **Initial Release:** Introduced a full-featured TSV with interactive cell editing, smart column sizing, and adaptive theme support.
-
----
-
-## Development
-
-Clone the repository and run the following commands:
-
-```bash
-npm install
-npm run lint
-npm test
+```json
+{
+  "tsv.enabled": true,
+  "tsv.treatFirstRowAsHeader": true,
+  "tsv.addSerialIndex": false,
+  "tsv.fontFamily": "",
+  "tsv.cellPadding": 4
+}
 ```
 
-To create a VS Code extension package, run:
+### Settings Reference
+
+| Setting | Type | Default | Description |
+|---------|------|---------|-------------|
+| `tsv.enabled` | boolean | `true` | Enable/disable the extension |
+| `tsv.treatFirstRowAsHeader` | boolean | `true` | Treat first row as headers |
+| `tsv.addSerialIndex` | boolean | `false` | Show row numbers |
+| `tsv.fontFamily` | string | `""` | Custom font (inherits editor font if empty) |
+| `tsv.cellPadding` | number | `4` | Cell padding in pixels |
+
+## 🔧 Commands
+
+Access these commands via Command Palette (`Ctrl/Cmd+Shift+P`):
+
+- `TSV: Toggle Extension On/Off`
+- `TSV: Toggle First Row as Header`
+- `TSV: Toggle Serial Index Column`
+- `TSV: Change Font Family`
+- `TSV: Open as Raw Text`
+- `TSV: Open as Table`
+
+## 🎯 Requirements
+
+- VS Code 1.70.0 or higher
+- Node.js 14+ (for development)
+
+## 🐛 Known Issues
+
+- Very large files (>10MB) may experience slower performance
+- Some special characters in file names may not display correctly in the toolbar
+
+## 📝 Release Notes
+
+### 1.1.3 (Latest)
+
+- ✨ Added rainbow color scheme for columns
+- 🎨 Improved button styling and padding
+- 🔧 Enhanced keyboard shortcuts (Alt+E for text editor)
+- 🚀 Removed generic TSV support, focused on Diablo II files
+
+### 1.1.2
+
+- 🐛 Fixed font family configuration
+- 📊 Improved table rendering performance
+
+### 1.1.0
+
+- ✨ Added column sorting functionality
+- 🎨 Font selection dropdown with VS Code integration
+- 📄 Support for empty file creation and editing
+- ⚡ Chunked loading for large files (1000+ rows)
+- 🔧 Enhanced Ctrl/Cmd+A select-all functionality
+
+[View full changelog](CHANGELOG.md)
+
+## 🤝 Contributing
+
+Contributions are welcome! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+
+### Development Setup
 
 ```bash
+# Clone the repository
+git clone https://github.com/bethington/vscode-d2-txt-editor-extension.git
+cd vscode-d2-txt-editor-extension
+
+# Install dependencies
+npm install
+
+# Run tests
+npm test
+
+# Compile and watch for changes
+npm run watch
+
+# Package extension
 npm run package
 ```
 
+## 📜 License
+
+This project is licensed under the [MIT License](LICENSE).
+
+## 🙏 Acknowledgments
+
+- Built with [Papa Parse](https://www.papaparse.com/) for robust CSV parsing
+- Inspired by the Diablo II modding community
+- Thanks to all contributors and users who provided feedback
+
+## 📞 Support
+
+- 🐛 [Report Issues](https://github.com/bethington/vscode-d2-txt-editor-extension/issues)
+- 💡 [Feature Requests](https://github.com/bethington/vscode-d2-txt-editor-extension/issues/new?template=feature_request.md)
+- 📧 [Contact](mailto:your-email@example.com)
+
 ---
 
-## Support
-
-Have questions, suggestions, or encountered an issue?
-
-- Open an issue on [GitHub](https://github.com/jonaraphael/csv/issues) and let us know how we can help!
-
----
-
-## License
-
-This extension is licensed under the [MIT License](LICENSE).
+Enjoy modding Diablo II! 🎮⚔️

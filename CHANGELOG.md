@@ -1,36 +1,57 @@
-# Changelog
+# Change Log
 
-All notable changes to the "CSV" extension will be documented in this file.
+All notable changes to the "Diablo II .txt Editor" extension will be documented in this file.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/) and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
+and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.3] - 2025-06-11
-- Added: TSV file support with automatic tab delimiter.
+## [Unreleased]
 
-## [1.1.2] - 2025-06-11
-- Fixed: fontFamily
+### Added
 
-## [1.1.0] - 2025-06-11
-- New: Row Insertion/Deletion.
-- New: Column sorting by clicking header labels.
-- Added: Font selection dropdown honoring VS Code fonts.
-- Added: Editing of empty CSV files.
-- Improved: Large files load in 1000-row chunks.
-- Enhanced: `Ctrl/Cmd + A` selects the entire table.
-- Fixed: Row indexing when the header row is disabled.
-- Improved: Safer rendering for HTML-like content.
+- Rainbow color scheme for column text with 12 distinct colors for better visual separation
+- Improved button styling with padding for better user experience
+- Comprehensive documentation following VS Code extension best practices
 
-## [1.0.6] - 2024-05-20
-- New: Multi-cell selection with intuitive `Shift + Click` support.
-- Enhanced: Clipboard integration for copying selected cells as clean, CSV-formatted text.
-- Improved: Navigation and editing, including better handling of special characters like quotes and commas.
-- Added: Advanced column type detection with dynamic color-coded highlighting.
-- Refined: Update mechanism for external document changes without interrupting your workflow.
+### Changed
 
-## [1.0.2] - 2024-02-15
-- Improved: Seamless activation of editing mode on double-click.
-- Fixed: `Tab` and `Shift + Tab` navigation issues, ensuring smooth cell-to-cell movement.
-- Updated: Sticky header styling now consistently matches the active theme.
+- Removed support for .tsv files to focus exclusively on Diablo II data files
+- Enhanced visual design with theme-aware color palettes
+- Refined file associations to better serve Diablo II modding community
 
-## [1.0.0] - 2023-12-01
-- Initial release with interactive cell editing, smart column sizing, and adaptive theme support.
+### Fixed
+
+- Build configuration issues with VS Code tasks and launch settings
+- Markdown formatting compliance for all documentation files
+
+## [1.0.0] - Initial Release
+
+### Features
+
+- Custom editor for Diablo II .txt data files
+- Table-based editing interface with sortable columns
+- Support for all Diablo II data file types including:
+  - Character stats (CharStats.txt)
+  - Item properties (ItemStatCost.txt, ItemTypes.txt, Weapons.txt, Armor.txt)
+  - Skill definitions (Skills.txt, SkillDesc.txt)
+  - Monster data (MonStats.txt, MonType.txt, MonPlace.txt)
+  - Level configuration (Levels.txt, LvlTypes.txt, LvlPrest.txt)
+  - Game mechanics (Experience.txt, DifficultyLevels.txt)
+  - And many more Diablo II modding files
+- Raw text editing mode for advanced users
+- Keyboard shortcuts for efficient workflow
+- Light and dark theme support
+- Auto-detection of tab-delimited format
+- Undo/redo functionality
+- Real-time preview of changes
+
+### Capabilities
+
+- **Table Editor**: Visual editing with sortable columns and cell selection
+- **Raw Text Mode**: Direct text editing for complex modifications
+- **File Support**: Comprehensive support for Diablo II data files
+- **Theme Integration**: Seamless integration with VS Code themes
+- **Keyboard Shortcuts**:
+  - `Ctrl+E` / `Cmd+E`: Toggle between table and raw text modes
+  - Standard editing shortcuts supported
+- **Data Integrity**: Preserves file structure and formatting
