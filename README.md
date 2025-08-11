@@ -1,6 +1,19 @@
-# **TSV**
+# **Diablo II .txt Editor for VS Code**
 
-Ex## Why TSV?
+Experience a whole new way to work with Diablo II data files and TSV files right inside VS Code. This extension transforms your tab-delimited text files into an interactive, spreadsheet-like experience—making it effortless to view, edit, and navigate your game data with precision and speed.
+
+---
+
+## Screenshots
+
+![Dark Theme Screenshot](images/Screenshot_dark.png)
+![Light Theme Screenshot](images/Screenshot_light.png)
+
+---
+
+## Why This Editor?
+
+Working with tab-delimited data files shouldn't be a chore. With this editor, you get:y TSV?
 
 Working with TSV files shouldn't be a chore. With TSV, you get:ience a whole new way to work with TSV files right inside VS Code. TSV transforms your TSV files into an interactive, spreadsheet-like experience—making it effortless to view, edit, and navigate your data with precision and speed.
 
@@ -13,27 +26,29 @@ Working with TSV files shouldn't be a chore. With TSV, you get:ience a whole new
 
 ---
 
-## Why CSV?
+---
 
-Working with CSV files shouldn’t be a chore. With CSV, you get:
+## Supported File Types
 
-- **Direct In-Place Editing:** Click on any cell to edit its content seamlessly. Your changes can be saved immediately to the TSV file, ensuring data integrity without extra steps.
-- **Smart Column Sizing & Dynamic Color Coding:** Columns automatically adjust to fit content while being visually distinguished by data type. Whether it’s boolean, date, integer, float, or text, each column gets its own adaptive color that adjusts for light and dark themes.
-- **Sticky Headers & Fluid Navigation:** Keep your header row always visible as you scroll. Effortlessly move through cells using intuitive keyboard shortcuts like `Tab`, `Shift + Tab`, and arrow keys—just like a full-featured spreadsheet.
-- **Efficient Multi-Cell Selection & Clipboard Integration:** Select a range of cells with click-and-drag and copy them as well-formatted CSV data using `Ctrl/Cmd + C`.
-- **Robust Data Handling:** Leveraging the power of [Papa Parse](https://www.papaparse.com/), the extension handles complex TSV structures, special characters, and various data types gracefully.
-- **Theme-Optimized Interface:** Whether you prefer light or dark mode, TSV automatically adapts its styles for an optimal viewing experience.
+This extension supports:
+
+- All Diablo II data files (*.txt files like items.txt, weapons.txt, etc.)
+- Standard TSV (tab-separated values) files (.tsv)
+
+All these files are opened in the same interactive grid editor optimized for tab-delimited data.
 
 ---
 
-## Features
+## Key Features
 
-- **Interactive Editing:** Double-click any cell to edit, with automatic save on blur.
-- **Smart Resizing:** Automatic calculation of column widths for improved readability.
-- **Dynamic Color Coding:** Visual cues based on data type help you quickly identify numbers, dates, booleans, and more.
-- **Sticky Headers:** Keep column titles in view as you scroll through large datasets.
+- **Direct In-Place Editing:** Click on any cell to edit its content seamlessly. Your changes can be saved immediately to the file, ensuring data integrity without extra steps.
+- **Smart Column Sizing & Dynamic Color Coding:** Columns automatically adjust to fit content while being visually distinguished by data type. Whether it's boolean, date, integer, float, or text, each column gets its own adaptive color that adjusts for light and dark themes.
+- **Sticky Headers & Fluid Navigation:** Keep your header row always visible as you scroll. Effortlessly move through cells using intuitive keyboard shortcuts like `Tab`, `Shift + Tab`, and arrow keys—just like a full-featured spreadsheet.
+- **Efficient Multi-Cell Selection & Clipboard Integration:** Select a range of cells with click-and-drag and copy them as well-formatted tab-delimited data using `Ctrl/Cmd + C`.
+- **Robust Data Handling:** Leveraging the power of [Papa Parse](https://www.papaparse.com/), the extension handles complex tab-delimited structures, special characters, and various data types gracefully.
+- **Theme-Optimized Interface:** Whether you prefer light or dark mode, the editor automatically adapts its styles for an optimal viewing experience.
 - **Enhanced Keyboard Navigation:** Navigate cells with Tab/Shift+Tab and use keyboard shortcuts for quick editing, saving, selection, and full-table `Ctrl/Cmd + A` select-all.
-- **Advanced Multi-Cell Selection:** Easily select and copy blocks of data, then paste them elsewhere as properly formatted TSV.
+- **Diablo II Game Data Support:** Specifically optimized for handling Diablo II's tab-delimited .txt game data files.
 - **Add/Delete Columns:** Right-click any cell to add a column left or right, or remove the selected column.
 - **Edit Empty TSVs:** Create or open an empty TSV file and start typing immediately.
 - **Column Sorting:** Click column headers to sort ascending or descending.
