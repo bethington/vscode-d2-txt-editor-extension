@@ -1602,34 +1602,22 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
       
       modData[0][col] = baseValue;
     } else {
-      // For data rows, we need to find the actual mod row by identifier
+      // For data rows, find the actual mod row by column 0 matching
       const actualModRowIndex = diffRow.modRowIndex;
       
       if (actualModRowIndex >= 0 && actualModRowIndex < modData.length) {
-        // Ensure enough columns
+        // Update existing row
         while (modData[actualModRowIndex].length <= col) {
           modData[actualModRowIndex].push('');
         }
-        
         modData[actualModRowIndex][col] = baseValue;
       } else if (diffRow.baseRowIndex >= 0) {
-        // Row doesn't exist in mod, need to add it
+        // Row doesn't exist in mod, need to add it from base
         const baseRow = this.baseFileData[diffRow.baseRowIndex];
         const newRow = [...baseRow];
         
-        // Find correct insertion point to maintain some order
-        let insertIndex = modData.length;
-        if (modData.length > 1) {
-          // Try to maintain alphabetical order by first column
-          for (let i = 1; i < modData.length; i++) {
-            if (modData[i][0] && newRow[0] && modData[i][0] > newRow[0]) {
-              insertIndex = i;
-              break;
-            }
-          }
-        }
-        
-        modData.splice(insertIndex, 0, newRow);
+        // Add the new row at the end for now
+        modData.push(newRow);
       }
     }
     
@@ -1684,19 +1672,8 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
           // Update existing row
           modData[actualModRowIndex] = [...baseRow];
         } else {
-          // Add new row - find correct insertion point
-          let insertIndex = modData.length;
-          if (modData.length > 1) {
-            // Try to maintain alphabetical order by first column
-            for (let i = 1; i < modData.length; i++) {
-              if (modData[i][0] && baseRow[0] && modData[i][0] > baseRow[0]) {
-                insertIndex = i;
-                break;
-              }
-            }
-          }
-          
-          modData.splice(insertIndex, 0, [...baseRow]);
+          // Add new row from base
+          modData.push([...baseRow]);
         }
       }
     }
@@ -1722,38 +1699,27 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
 
     const result: DiffRow[] = [];
     
-    // Create maps for row matching based on first column identifier
-    const baseRowMap = new Map<string, { row: string[], index: number }>();
-    const modRowMap = new Map<string, { row: string[], index: number }>();
-    
-    // Build base file row map (skip header row)
-    for (let i = 1; i < this.baseFileData.length; i++) {
+    // Create a map of base file rows by column 0 values for quick lookup
+    const baseRowMap = new Map<string, string[]>();
+    for (let i = 1; i < this.baseFileData.length; i++) { // Skip header row (index 0)
       const row = this.baseFileData[i];
       if (row.length > 0 && row[0]) {
-        baseRowMap.set(row[0], { row, index: i });
-      }
-    }
-    
-    // Build mod file row map (skip header row)
-    for (let i = 1; i < modData.length; i++) {
-      const row = modData[i];
-      if (row.length > 0 && row[0]) {
-        modRowMap.set(row[0], { row, index: i });
+        baseRowMap.set(row[0], row);
       }
     }
 
-    // First, handle header row (row 0)
-    if (this.baseFileData.length > 0 || modData.length > 0) {
-      const baseHeader = this.baseFileData[0] || [];
+    // Process header row first (row 0)
+    if (modData.length > 0) {
       const modHeader = modData[0] || [];
-      const maxCols = Math.max(baseHeader.length, modHeader.length);
+      const baseHeader = this.baseFileData[0] || [];
+      const maxCols = Math.max(modHeader.length, baseHeader.length);
       
       const headerCells: DiffCell[] = [];
       let hasHeaderChanges = false;
       
       for (let col = 0; col < maxCols; col++) {
-        const baseValue = baseHeader[col] || '';
         const modValue = modHeader[col] || '';
+        const baseValue = baseHeader[col] || '';
         
         let status: 'same' | 'modified' | 'base-only' | 'mod-only' = 'same';
         
@@ -1779,43 +1745,35 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
       result.push({
         rowIndex: 0,
         baseRowIndex: this.baseFileData.length > 0 ? 0 : -1,
-        modRowIndex: modData.length > 0 ? 0 : -1,
+        modRowIndex: 0,
         cells: headerCells,
         status: hasHeaderChanges ? 'modified' : 'same',
         isHeader: true
       });
     }
 
-    // Get all unique identifiers from both files
-    const allIdentifiers = new Set<string>();
-    baseRowMap.forEach((_, key) => allIdentifiers.add(key));
-    modRowMap.forEach((_, key) => allIdentifiers.add(key));
-
-    // Process each unique identifier
-    let displayRowIndex = 1; // Start after header
-    for (const identifier of Array.from(allIdentifiers).sort()) {
-      const baseEntry = baseRowMap.get(identifier);
-      const modEntry = modRowMap.get(identifier);
+    // Now iterate through each data row in the current file (skip header)
+    for (let modRowIndex = 1; modRowIndex < modData.length; modRowIndex++) {
+      const modRow = modData[modRowIndex];
+      const modRowId = modRow[0] || ''; // Column 0 value to match on
       
-      const baseRow = baseEntry?.row || [];
-      const modRow = modEntry?.row || [];
-      const maxCols = Math.max(baseRow.length, modRow.length);
+      // Find the matching base row by column 0 value
+      const baseRow = baseRowMap.get(modRowId) || [];
+      const baseRowIndex = baseRow.length > 0 ? this.findBaseRowIndex(modRowId) : -1;
       
+      // Compare all columns between the matched rows
+      const maxCols = Math.max(modRow.length, baseRow.length);
       const cells: DiffCell[] = [];
       let hasChanges = false;
       
       for (let col = 0; col < maxCols; col++) {
-        const baseValue = baseRow[col] || '';
         const modValue = modRow[col] || '';
+        const baseValue = baseRow[col] || '';
         
         let status: 'same' | 'modified' | 'base-only' | 'mod-only' = 'same';
         
-        if (!modEntry) {
-          // Row exists only in base file
-          status = 'base-only';
-          hasChanges = true;
-        } else if (!baseEntry) {
-          // Row exists only in mod file
+        if (baseRow.length === 0) {
+          // No matching base row found - this is a mod-only row
           status = 'mod-only';
           hasChanges = true;
         } else if (col >= modRow.length && baseValue) {
@@ -1827,7 +1785,7 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
           status = 'mod-only';
           hasChanges = true;
         } else if (baseValue !== modValue) {
-          // Values differ
+          // Values differ between base and mod
           status = 'modified';
           hasChanges = true;
         }
@@ -1841,27 +1799,73 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
       }
       
       let rowStatus: 'same' | 'modified' | 'base-only' | 'mod-only' = 'same';
-      if (!modEntry) {
-        rowStatus = 'base-only';
-      } else if (!baseEntry) {
+      if (baseRow.length === 0) {
         rowStatus = 'mod-only';
       } else if (hasChanges) {
         rowStatus = 'modified';
       }
       
       result.push({
-        rowIndex: displayRowIndex,
-        baseRowIndex: baseEntry?.index || -1,
-        modRowIndex: modEntry?.index || -1,
+        rowIndex: modRowIndex,
+        baseRowIndex,
+        modRowIndex,
         cells,
         status: rowStatus,
         isHeader: false
       });
+    }
+
+    // Also check for base-only rows (rows in base but not in mod)
+    for (let baseRowIndex = 1; baseRowIndex < this.baseFileData.length; baseRowIndex++) {
+      const baseRow = this.baseFileData[baseRowIndex];
+      const baseRowId = baseRow[0] || '';
       
-      displayRowIndex++;
+      // Check if this base row exists in mod data
+      let foundInMod = false;
+      for (let modRowIndex = 1; modRowIndex < modData.length; modRowIndex++) {
+        if (modData[modRowIndex][0] === baseRowId) {
+          foundInMod = true;
+          break;
+        }
+      }
+      
+      if (!foundInMod) {
+        // This is a base-only row
+        const cells: DiffCell[] = [];
+        
+        for (let col = 0; col < baseRow.length; col++) {
+          cells.push({
+            columnIndex: col,
+            baseValue: baseRow[col] || '',
+            modValue: '',
+            status: 'base-only'
+          });
+        }
+        
+        result.push({
+          rowIndex: result.length, // Use next available display index
+          baseRowIndex,
+          modRowIndex: -1,
+          cells,
+          status: 'base-only',
+          isHeader: false
+        });
+      }
     }
     
     return result;
+  }
+
+  /**
+   * Helper method to find the actual index of a base row by column 0 value
+   */
+  private findBaseRowIndex(column0Value: string): number {
+    for (let i = 1; i < this.baseFileData.length; i++) {
+      if (this.baseFileData[i][0] === column0Value) {
+        return i;
+      }
+    }
+    return -1;
   }
 }
 
