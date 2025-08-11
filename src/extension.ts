@@ -1121,6 +1121,13 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
         else if(document.caretPositionFromPoint) { let pos = document.caretPositionFromPoint(x,y); range = document.createRange(); range.setStart(pos.offsetNode, pos.offset); }
         if(range){ let sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(range); }
       };
+      const selectAllCellContents = cell => { setTimeout(() => { 
+        const range = document.createRange(); 
+        range.selectNodeContents(cell);
+        const sel = window.getSelection(); 
+        sel.removeAllRanges(); 
+        sel.addRange(range);
+      }, 10); };
       const editCell = (cell, event) => {
         if(editingCell === cell) return;
         if(editingCell) editingCell.blur();
@@ -1140,7 +1147,7 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
           cell.removeEventListener('blur', onBlurHandler);
         };
         cell.addEventListener('blur', onBlurHandler);
-        event ? setCursorAtPoint(cell, event.clientX, event.clientY) : setCursorToEnd(cell);
+        selectAllCellContents(cell);
       };
       table.addEventListener('dblclick', e => { 
         // Prevent double-click since single-click now handles editing
