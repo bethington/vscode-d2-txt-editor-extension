@@ -191,6 +191,7 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
   public document!: vscode.TextDocument;
   private diffMode = false;
   private baseFileData: string[][] = [];
+  private savedScrollPosition: { x: number, y: number } = { x: 0, y: 0 };
 
   constructor(private readonly context: vscode.ExtensionContext) {}
 
@@ -241,6 +242,8 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
       text?: string;
       index?: number;
       ascending?: boolean;
+      x?: number;
+      y?: number;
     }) => {
       switch (e.type) {
         case 'openAsText':
@@ -297,6 +300,11 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
         case 'sortColumn':
           if (e.index !== undefined && e.ascending !== undefined) {
             await this.sortColumn(e.index, e.ascending);
+          }
+          break;
+        case 'scrollPositionCaptured':
+          if (e.x !== undefined && e.y !== undefined) {
+            this.savedScrollPosition = { x: e.x, y: e.y };
           }
           break;
       }
@@ -380,7 +388,13 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     }
     this.isUpdatingDocument = false;
     console.log(`TSV: Updated row ${row + 1}, column ${col + 1} to "${value}"`);
-    this.currentWebviewPanel?.webview.postMessage({ type: 'updateCell', row, col, value });
+    
+    // If we're in diff mode, refresh the entire content to properly show diff overlays
+    if (this.diffMode) {
+      this.updateWebviewContentPreservingScroll();
+    } else {
+      this.currentWebviewPanel?.webview.postMessage({ type: 'updateCell', row, col, value });
+    }
   }
 
   /**
@@ -582,6 +596,32 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
   }
 
   /**
+   * Updates webview content while preserving scroll position (used for diff cell edits)
+   */
+   private async updateWebviewContentPreservingScroll() {
+    if (!this.currentWebviewPanel) {
+      return;
+    }
+
+    // First, get the current scroll position
+    await this.currentWebviewPanel.webview.postMessage({ type: 'getScrollPosition' });
+    
+    // Wait a bit for the scroll position to be captured, then update content
+    setTimeout(() => {
+      this.updateWebviewContent();
+      
+      // After content is updated, restore the scroll position
+      setTimeout(() => {
+        this.currentWebviewPanel?.webview.postMessage({ 
+          type: 'restoreScrollPosition', 
+          x: this.savedScrollPosition.x, 
+          y: this.savedScrollPosition.y 
+        });
+      }, 100);
+    }, 50);
+  }
+
+  /**
    * Generates an HTML table from CSV data.
    */
   private generateHtmlContent(data: string[][], treatHeader: boolean, addSerialIndex: boolean, fontFamily: string): string {
@@ -758,6 +798,7 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     <meta charset="UTF-8">
     <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="scroll-position" content="${this.savedScrollPosition.x},${this.savedScrollPosition.y}">
     <title>CSV</title>
     <style nonce="${nonce}">
       body { font-family: ${fontFamily}; margin: 0; padding: 0; user-select: none; }
@@ -1344,11 +1385,28 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
         if(editingCell === cell) return;
         if(editingCell) editingCell.blur();
         cell.classList.remove('selected');
-        originalCellValue = cell.textContent;
+        
+        // For diff cells, extract the actual value (not the HTML)
+        let actualValue = cell.textContent;
+        
+        // Check if this is a diff cell with overlay content
+        const diffDiv = cell.querySelector('div[style*="position: relative"]');
+        if (diffDiv) {
+          const currentValueDiv = diffDiv.querySelector('div[style*="font-weight: bold"]');
+          if (currentValueDiv) {
+            actualValue = currentValueDiv.textContent;
+          }
+        }
+        
+        originalCellValue = actualValue;
         editingCell = cell;
         cell.classList.add('editing');
+        
+        // Replace content with just the editable value
+        cell.innerHTML = actualValue;
         cell.setAttribute('contenteditable', 'true');
         cell.focus();
+        
         const onBlurHandler = () => {
           const value = cell.textContent;
           const coords = getCellCoords(cell);
@@ -1386,6 +1444,25 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
         }
         vscode.postMessage({ type: 'copyToClipboard', text: csv.trimEnd() });
       };
+      
+      // Scroll position preservation for diff cell edits
+      let savedScrollX = 0, savedScrollY = 0;
+      
+      // Check if scroll position is embedded in the HTML
+      const scrollMeta = document.querySelector('meta[name="scroll-position"]');
+      if (scrollMeta) {
+        const content = scrollMeta.getAttribute('content');
+        if (content) {
+          const [x, y] = content.split(',').map(Number);
+          savedScrollX = x || 0;
+          savedScrollY = y || 0;
+          // Restore scroll position immediately after DOM is ready
+          setTimeout(() => {
+            window.scrollTo(savedScrollX, savedScrollY);
+          }, 50);
+        }
+      }
+      
       window.addEventListener('message', event => {
         const message = event.data;
         if(message.type === 'focus'){
@@ -1394,8 +1471,19 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
           isUpdating = true;
           const { row, col, value } = message;
           const cell = table.querySelector('td[data-row="'+row+'"][data-col="'+col+'"]');
-          if (cell) { cell.textContent = value; }
+          if (cell) { 
+            cell.textContent = value; 
+          }
           isUpdating = false;
+        } else if(message.type === 'getScrollPosition'){
+          // Save current scroll position and send it back to extension
+          savedScrollX = window.scrollX;
+          savedScrollY = window.scrollY;
+          vscode.postMessage({ type: 'scrollPositionCaptured', x: savedScrollX, y: savedScrollY });
+        } else if(message.type === 'restoreScrollPosition'){
+          // Restore scroll position after content refresh
+          const { x, y } = message;
+          window.scrollTo(x, y);
         }
       });
       document.addEventListener('keydown', e => {
