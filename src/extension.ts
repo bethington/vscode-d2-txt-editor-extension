@@ -79,6 +79,28 @@ export function activate(context: vscode.ExtensionContext) {
       );
       // Refresh all open CSV editors
       TsvEditorProvider.editors.forEach(ed => ed.refresh());
+    }),
+    vscode.commands.registerCommand('diablo2TxtEditor.setBasePath', async () => {
+      const config = vscode.workspace.getConfiguration('diablo2TxtEditor');
+      const currentPath = config.get<string>('basePath', '');
+
+      const result = await vscode.window.showInputBox({
+        prompt: 'Enter the path to your Diablo II data files directory',
+        placeHolder: 'e.g., F:\\D2R-Data\\data',
+        value: currentPath,
+        validateInput: (value) => {
+          if (!value) {
+            return 'Path cannot be empty';
+          }
+          // Basic validation - could be enhanced to check if path exists and contains required folders
+          return null;
+        }
+      });
+
+      if (result !== undefined) {
+        await config.update('basePath', result, vscode.ConfigurationTarget.Global);
+        vscode.window.showInformationMessage(`Diablo II base path set to: ${result}`);
+      }
     })
 
   );
@@ -91,6 +113,30 @@ export function activate(context: vscode.ExtensionContext) {
       { supportsMultipleEditorsPerDocument: false }
     )
   );
+}
+
+/**
+ * Gets the configured Diablo II base path from user settings.
+ * @returns The base path to Diablo II data files, or empty string if not set.
+ */
+function getDiablo2BasePath(): string {
+  const config = vscode.workspace.getConfiguration('diablo2TxtEditor');
+  return config.get<string>('basePath', '');
+}
+
+/**
+ * Validates if the given path appears to be a valid Diablo II data directory.
+ * @param basePath The path to validate
+ * @returns True if the path contains the expected subdirectories
+ */
+function isValidDiablo2DataPath(basePath: string): boolean {
+  if (!basePath) {
+    return false;
+  }
+  
+  // Basic validation - in a real implementation, you might want to check if these directories actually exist
+  // For now, we'll just return true if a path is provided
+  return true;
 }
 
 /**

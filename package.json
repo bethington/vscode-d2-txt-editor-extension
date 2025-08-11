@@ -23,7 +23,8 @@
     "onCommand:tsv.toggleHeader",
     "onCommand:tsv.toggleSerialIndex",
     "onCommand:tsv.changeFontFamily",
-    "onCommand:tsv.openAsText"
+    "onCommand:tsv.openAsText",
+    "onCommand:diablo2TxtEditor.setBasePath"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -145,12 +146,22 @@
       {
         "command": "tsv.openAsText",
         "title": "TSV: Open as Raw Text"
+      },
+      {
+        "command": "diablo2TxtEditor.setBasePath",
+        "title": "Diablo II: Set Base Path"
       }
     ],
     "configuration": {
       "type": "object",
-      "title": "TSV Extension Configuration",
+      "title": "Diablo II .txt Editor Configuration",
       "properties": {
+        "diablo2TxtEditor.basePath": {
+          "type": "string",
+          "default": "",
+          "description": "Path to the base Diablo II game data files directory (e.g., 'F:\\D2R-Data\\data'). Should contain 'global', 'hd', and 'local' folders.",
+          "scope": "application"
+        },
         "tsv.enabled": {
           "type": "boolean",
           "default": true,
