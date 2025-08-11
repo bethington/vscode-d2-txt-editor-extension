@@ -389,9 +389,9 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     this.isUpdatingDocument = false;
     console.log(`TSV: Updated row ${row + 1}, column ${col + 1} to "${value}"`);
     
-    // If we're in diff mode, refresh the entire content to properly show diff overlays
+    // If we're in diff mode, update the specific cell with diff overlay instead of full refresh
     if (this.diffMode) {
-      this.updateWebviewContentPreservingScroll();
+      this.updateCellWithDiffContent(row, col, value);
     } else {
       this.currentWebviewPanel?.webview.postMessage({ type: 'updateCell', row, col, value });
     }
@@ -603,22 +603,54 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
       return;
     }
 
-    // First, get the current scroll position
-    await this.currentWebviewPanel.webview.postMessage({ type: 'getScrollPosition' });
+    // First, request the current scroll position
+    this.currentWebviewPanel.webview.postMessage({ type: 'getScrollPosition' });
     
-    // Wait a bit for the scroll position to be captured, then update content
-    setTimeout(() => {
-      this.updateWebviewContent();
-      
-      // After content is updated, restore the scroll position
-      setTimeout(() => {
-        this.currentWebviewPanel?.webview.postMessage({ 
-          type: 'restoreScrollPosition', 
-          x: this.savedScrollPosition.x, 
-          y: this.savedScrollPosition.y 
-        });
-      }, 100);
-    }, 50);
+    // Wait for the scroll position to be captured and processed
+    await new Promise(resolve => setTimeout(resolve, 100));
+    
+    // Now update the content with the saved scroll position embedded in the HTML
+    this.updateWebviewContent();
+  }
+
+  /**
+   * Updates a specific cell with diff content without refreshing the entire webview
+   */
+  private async updateCellWithDiffContent(row: number, col: number, value: string) {
+    if (!this.currentWebviewPanel || !this.diffMode || this.baseFileData.length === 0) {
+      // Fallback to regular cell update if not in diff mode
+      this.currentWebviewPanel?.webview.postMessage({ type: 'updateCell', row, col, value });
+      return;
+    }
+
+    // Get the current data and generate diff for this specific cell
+    const modData = Papa.parse(this.document.getText(), { dynamicTyping: false, delimiter: this.getSeparator() }).data as string[][];
+    const diffData = this.generateDiffData(modData);
+    
+    // Find diff info for this cell
+    const diffInfo = this.getDiffInfoForCell(diffData, row, col);
+    
+    // Get column type for color
+    const numColumns = Math.max(...modData.map(r => r.length));
+    const columnData = Array.from({ length: numColumns }, (_, i) => modData.slice(1).map(r => r[i] || ''));
+    const columnType = this.estimateColumnDataType(columnData[col] || []);
+    
+    // Generate cell content with diff overlay
+    const isDark = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark;
+    const color = this.getColumnColor(columnType, isDark, col);
+    const cellContent = this.generateCellHtml(value, row, col, 10, color, isDark, diffInfo);
+    
+    // Extract just the inner HTML content
+    const match = cellContent.match(/<td[^>]*>(.*)<\/td>/s);
+    const innerContent = match ? match[1] : value;
+    
+    // Send updated cell content with diff overlay
+    this.currentWebviewPanel.webview.postMessage({ 
+      type: 'updateCellContent', 
+      row, 
+      col, 
+      content: innerContent 
+    });
   }
 
   /**
@@ -1448,18 +1480,35 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
       // Scroll position preservation for diff cell edits
       let savedScrollX = 0, savedScrollY = 0;
       
-      // Check if scroll position is embedded in the HTML
+      // Check if scroll position is embedded in the HTML and restore it
       const scrollMeta = document.querySelector('meta[name="scroll-position"]');
       if (scrollMeta) {
         const content = scrollMeta.getAttribute('content');
-        if (content) {
+        if (content && content !== '0,0') {
           const [x, y] = content.split(',').map(Number);
           savedScrollX = x || 0;
           savedScrollY = y || 0;
-          // Restore scroll position immediately after DOM is ready
-          setTimeout(() => {
-            window.scrollTo(savedScrollX, savedScrollY);
-          }, 50);
+          
+          // Use multiple strategies to ensure scroll restoration works
+          const restoreScroll = () => {
+            if (savedScrollX > 0 || savedScrollY > 0) {
+              window.scrollTo(savedScrollX, savedScrollY);
+            }
+          };
+          
+          // Try immediately
+          restoreScroll();
+          
+          // Try after a short delay
+          setTimeout(restoreScroll, 50);
+          
+          // Try after images and content load
+          setTimeout(restoreScroll, 200);
+          
+          // Try after DOM is fully ready
+          if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', restoreScroll);
+          }
         }
       }
       
@@ -1473,6 +1522,14 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
           const cell = table.querySelector('td[data-row="'+row+'"][data-col="'+col+'"]');
           if (cell) { 
             cell.textContent = value; 
+          }
+          isUpdating = false;
+        } else if(message.type === 'updateCellContent'){
+          isUpdating = true;
+          const { row, col, content } = message;
+          const cell = table.querySelector('td[data-row="'+row+'"][data-col="'+col+'"]');
+          if (cell) { 
+            cell.innerHTML = content; 
           }
           isUpdating = false;
         } else if(message.type === 'getScrollPosition'){
