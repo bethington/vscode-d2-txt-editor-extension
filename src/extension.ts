@@ -1572,52 +1572,134 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     }
 
     const modData = Papa.parse(this.document.getText(), { dynamicTyping: false, delimiter: '\t' }).data as string[][];
+    const diffData = this.generateDiffData(modData);
     
-    // Ensure we have the base value to copy
-    if (row < this.baseFileData.length && col < this.baseFileData[row].length) {
-      const baseValue = this.baseFileData[row][col] || '';
-      
-      // Ensure mod data has enough rows/columns
-      while (modData.length <= row) {
+    // Find the diff row for this display row
+    const diffRow = diffData.find(d => d.rowIndex === row);
+    if (!diffRow) {
+      return;
+    }
+
+    // Get the cell data
+    const diffCell = diffRow.cells.find(c => c.columnIndex === col);
+    if (!diffCell) {
+      return;
+    }
+
+    const baseValue = diffCell.baseValue;
+    
+    // For header row (row 0), directly update
+    if (row === 0) {
+      // Ensure mod data has header row
+      if (modData.length === 0) {
         modData.push([]);
       }
-      while (modData[row].length <= col) {
-        modData[row].push('');
+      
+      // Ensure enough columns
+      while (modData[0].length <= col) {
+        modData[0].push('');
       }
       
-      // Update the mod data
-      modData[row][col] = baseValue;
+      modData[0][col] = baseValue;
+    } else {
+      // For data rows, we need to find the actual mod row by identifier
+      const actualModRowIndex = diffRow.modRowIndex;
       
-      // Save the changes
-      const newContent = Papa.unparse(modData, { delimiter: '\t' });
-      const fullRange = new vscode.Range(0, 0, this.document.lineCount, this.document.lineCount ? this.document.lineAt(this.document.lineCount - 1).text.length : 0);
-      const edit = new vscode.WorkspaceEdit();
-      edit.replace(this.document.uri, fullRange, newContent);
-      await vscode.workspace.applyEdit(edit);
-      
-      // Refresh the view
-      setTimeout(() => this.updateWebviewContent(), 100);
+      if (actualModRowIndex >= 0 && actualModRowIndex < modData.length) {
+        // Ensure enough columns
+        while (modData[actualModRowIndex].length <= col) {
+          modData[actualModRowIndex].push('');
+        }
+        
+        modData[actualModRowIndex][col] = baseValue;
+      } else if (diffRow.baseRowIndex >= 0) {
+        // Row doesn't exist in mod, need to add it
+        const baseRow = this.baseFileData[diffRow.baseRowIndex];
+        const newRow = [...baseRow];
+        
+        // Find correct insertion point to maintain some order
+        let insertIndex = modData.length;
+        if (modData.length > 1) {
+          // Try to maintain alphabetical order by first column
+          for (let i = 1; i < modData.length; i++) {
+            if (modData[i][0] && newRow[0] && modData[i][0] > newRow[0]) {
+              insertIndex = i;
+              break;
+            }
+          }
+        }
+        
+        modData.splice(insertIndex, 0, newRow);
+      }
     }
+    
+    // Save the changes
+    const newContent = Papa.unparse(modData, { delimiter: '\t' });
+    const fullRange = new vscode.Range(0, 0, this.document.lineCount, this.document.lineCount ? this.document.lineAt(this.document.lineCount - 1).text.length : 0);
+    const edit = new vscode.WorkspaceEdit();
+    edit.replace(this.document.uri, fullRange, newContent);
+    await vscode.workspace.applyEdit(edit);
+    
+    // Refresh the view
+    setTimeout(() => this.updateWebviewContent(), 100);
   }
 
   /**
    * Accepts an entire row from base to mod
    */
   private async acceptDiffRow(row: number) {
-    if (!this.diffMode || this.baseFileData.length === 0 || row >= this.baseFileData.length) {
+    if (!this.diffMode || this.baseFileData.length === 0) {
       return;
     }
 
     const modData = Papa.parse(this.document.getText(), { dynamicTyping: false, delimiter: '\t' }).data as string[][];
-    const baseRow = this.baseFileData[row];
+    const diffData = this.generateDiffData(modData);
     
-    // Ensure mod data has enough rows
-    while (modData.length <= row) {
-      modData.push([]);
+    // Find the diff row for this display row
+    const diffRow = diffData.find(d => d.rowIndex === row);
+    if (!diffRow) {
+      return;
     }
-    
-    // Copy the entire base row
-    modData[row] = [...baseRow];
+
+    // For header row (row 0), directly update
+    if (row === 0) {
+      if (diffRow.baseRowIndex >= 0 && diffRow.baseRowIndex < this.baseFileData.length) {
+        const baseHeader = this.baseFileData[diffRow.baseRowIndex];
+        
+        // Ensure mod data has header row
+        if (modData.length === 0) {
+          modData.push([]);
+        }
+        
+        modData[0] = [...baseHeader];
+      }
+    } else {
+      // For data rows
+      const actualModRowIndex = diffRow.modRowIndex;
+      
+      if (diffRow.baseRowIndex >= 0 && diffRow.baseRowIndex < this.baseFileData.length) {
+        const baseRow = this.baseFileData[diffRow.baseRowIndex];
+        
+        if (actualModRowIndex >= 0 && actualModRowIndex < modData.length) {
+          // Update existing row
+          modData[actualModRowIndex] = [...baseRow];
+        } else {
+          // Add new row - find correct insertion point
+          let insertIndex = modData.length;
+          if (modData.length > 1) {
+            // Try to maintain alphabetical order by first column
+            for (let i = 1; i < modData.length; i++) {
+              if (modData[i][0] && baseRow[0] && modData[i][0] > baseRow[0]) {
+                insertIndex = i;
+                break;
+              }
+            }
+          }
+          
+          modData.splice(insertIndex, 0, [...baseRow]);
+        }
+      }
+    }
     
     // Save the changes
     const newContent = Papa.unparse(modData, { delimiter: '\t' });
@@ -1639,15 +1721,84 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     }
 
     const result: DiffRow[] = [];
-    const baseHeaders = this.baseFileData[0] || [];
-    const modHeaders = modData[0] || [];
-
-    // Process all rows, comparing with base data
-    const maxRows = Math.max(this.baseFileData.length, modData.length);
     
-    for (let row = 0; row < maxRows; row++) {
-      const baseRow = this.baseFileData[row] || [];
-      const modRow = modData[row] || [];
+    // Create maps for row matching based on first column identifier
+    const baseRowMap = new Map<string, { row: string[], index: number }>();
+    const modRowMap = new Map<string, { row: string[], index: number }>();
+    
+    // Build base file row map (skip header row)
+    for (let i = 1; i < this.baseFileData.length; i++) {
+      const row = this.baseFileData[i];
+      if (row.length > 0 && row[0]) {
+        baseRowMap.set(row[0], { row, index: i });
+      }
+    }
+    
+    // Build mod file row map (skip header row)
+    for (let i = 1; i < modData.length; i++) {
+      const row = modData[i];
+      if (row.length > 0 && row[0]) {
+        modRowMap.set(row[0], { row, index: i });
+      }
+    }
+
+    // First, handle header row (row 0)
+    if (this.baseFileData.length > 0 || modData.length > 0) {
+      const baseHeader = this.baseFileData[0] || [];
+      const modHeader = modData[0] || [];
+      const maxCols = Math.max(baseHeader.length, modHeader.length);
+      
+      const headerCells: DiffCell[] = [];
+      let hasHeaderChanges = false;
+      
+      for (let col = 0; col < maxCols; col++) {
+        const baseValue = baseHeader[col] || '';
+        const modValue = modHeader[col] || '';
+        
+        let status: 'same' | 'modified' | 'base-only' | 'mod-only' = 'same';
+        
+        if (col >= modHeader.length && baseValue) {
+          status = 'base-only';
+          hasHeaderChanges = true;
+        } else if (col >= baseHeader.length && modValue) {
+          status = 'mod-only';
+          hasHeaderChanges = true;
+        } else if (baseValue !== modValue) {
+          status = 'modified';
+          hasHeaderChanges = true;
+        }
+        
+        headerCells.push({
+          columnIndex: col,
+          baseValue,
+          modValue,
+          status
+        });
+      }
+      
+      result.push({
+        rowIndex: 0,
+        baseRowIndex: this.baseFileData.length > 0 ? 0 : -1,
+        modRowIndex: modData.length > 0 ? 0 : -1,
+        cells: headerCells,
+        status: hasHeaderChanges ? 'modified' : 'same',
+        isHeader: true
+      });
+    }
+
+    // Get all unique identifiers from both files
+    const allIdentifiers = new Set<string>();
+    baseRowMap.forEach((_, key) => allIdentifiers.add(key));
+    modRowMap.forEach((_, key) => allIdentifiers.add(key));
+
+    // Process each unique identifier
+    let displayRowIndex = 1; // Start after header
+    for (const identifier of Array.from(allIdentifiers).sort()) {
+      const baseEntry = baseRowMap.get(identifier);
+      const modEntry = modRowMap.get(identifier);
+      
+      const baseRow = baseEntry?.row || [];
+      const modRow = modEntry?.row || [];
       const maxCols = Math.max(baseRow.length, modRow.length);
       
       const cells: DiffCell[] = [];
@@ -1659,13 +1810,24 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
         
         let status: 'same' | 'modified' | 'base-only' | 'mod-only' = 'same';
         
-        if (row >= modData.length || col >= modRow.length) {
+        if (!modEntry) {
+          // Row exists only in base file
           status = 'base-only';
           hasChanges = true;
-        } else if (row >= this.baseFileData.length || col >= baseRow.length) {
+        } else if (!baseEntry) {
+          // Row exists only in mod file
+          status = 'mod-only';
+          hasChanges = true;
+        } else if (col >= modRow.length && baseValue) {
+          // Column exists only in base
+          status = 'base-only';
+          hasChanges = true;
+        } else if (col >= baseRow.length && modValue) {
+          // Column exists only in mod
           status = 'mod-only';
           hasChanges = true;
         } else if (baseValue !== modValue) {
+          // Values differ
           status = 'modified';
           hasChanges = true;
         }
@@ -1678,14 +1840,25 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
         });
       }
       
+      let rowStatus: 'same' | 'modified' | 'base-only' | 'mod-only' = 'same';
+      if (!modEntry) {
+        rowStatus = 'base-only';
+      } else if (!baseEntry) {
+        rowStatus = 'mod-only';
+      } else if (hasChanges) {
+        rowStatus = 'modified';
+      }
+      
       result.push({
-        rowIndex: row,
-        baseRowIndex: row < this.baseFileData.length ? row : -1,
-        modRowIndex: row < modData.length ? row : -1,
+        rowIndex: displayRowIndex,
+        baseRowIndex: baseEntry?.index || -1,
+        modRowIndex: modEntry?.index || -1,
         cells,
-        status: hasChanges ? (row >= modData.length ? 'base-only' : 'modified') : 'same',
-        isHeader: row === 0
+        status: rowStatus,
+        isHeader: false
       });
+      
+      displayRowIndex++;
     }
     
     return result;
