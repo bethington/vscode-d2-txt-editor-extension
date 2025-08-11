@@ -1,6 +1,6 @@
 # **Diablo II .txt Editor for VS Code**
 
-Experience a whole new way to work with Diablo II data files and TSV files right inside VS Code. This extension transforms your tab-delimited text files into an interactive, spreadsheet-like experience—making it effortless to view, edit, and navigate your game data with precision and speed.
+Experience a whole new way to work with Diablo II data files right inside VS Code. This extension transforms your tab-delimited text files into an interactive, spreadsheet-like experience—making it effortless to view, edit, and navigate your game data with precision and speed.
 
 ---
 
@@ -13,16 +13,7 @@ Experience a whole new way to work with Diablo II data files and TSV files right
 
 ## Why This Editor?
 
-Working with tab-delimited data files shouldn't be a chore. With this editor, you get:y TSV?
-
-Working with TSV files shouldn't be a chore. With TSV, you get:ience a whole new way to work with TSV files right inside VS Code. TSV transforms your TSV files into an interactive, spreadsheet-like experience—making it effortless to view, edit, and navigate your data with precision and speed.
-
----
-
-## Screenshots
-
-![Dark Theme Screenshot](images/Screenshot_dark.png)
-![Light Theme Screenshot](images/Screenshot_light.png)
+Working with tab-delimited data files shouldn't be a chore. With this editor, you get a powerful and intuitive interface for managing your Diablo II game data files.
 
 ---
 
@@ -33,9 +24,8 @@ Working with TSV files shouldn't be a chore. With TSV, you get:ience a whole new
 This extension supports:
 
 - All Diablo II data files (*.txt files like items.txt, weapons.txt, etc.)
-- Standard TSV (tab-separated values) files (.tsv)
 
-All these files are opened in the same interactive grid editor optimized for tab-delimited data.
+These files are opened in an interactive grid editor optimized for tab-delimited data.
 
 ---
 
@@ -50,7 +40,7 @@ All these files are opened in the same interactive grid editor optimized for tab
 - **Enhanced Keyboard Navigation:** Navigate cells with Tab/Shift+Tab and use keyboard shortcuts for quick editing, saving, selection, and full-table `Ctrl/Cmd + A` select-all.
 - **Diablo II Game Data Support:** Specifically optimized for handling Diablo II's tab-delimited .txt game data files.
 - **Add/Delete Columns:** Right-click any cell to add a column left or right, or remove the selected column.
-- **Edit Empty TSVs:** Create or open an empty TSV file and start typing immediately.
+- **Edit Empty Files:** Create or open an empty file and start typing immediately.
 - **Column Sorting:** Click column headers to sort ascending or descending.
 - **Custom Font Selection:** Choose a font from a dropdown or inherit VS Code's default.
 - **Find & Highlight:** Built-in find widget helps you search for text within your CSV with real-time highlighting and navigation through matches.
@@ -73,9 +63,9 @@ Cursor (built on VS Code 1.99) and the latest VS Code releases (1.102).
 - Go to the Extensions view (`Ctrl+Shift+X` or `Cmd+Shift+X` on macOS).
 - Search for **CSV** and click **Install**.
 
-### 2. Open a CSV or TSV File
+### 2. Open a Diablo II Data File
 
-- Open any `.tsv` file in VS Code.
+- Open any supported Diablo II .txt file in VS Code.
 - The file will automatically load, presenting your data in an interactive grid view.
 
 ### 3. Edit and Navigate

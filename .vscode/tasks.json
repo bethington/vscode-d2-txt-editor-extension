@@ -5,16 +5,52 @@
 	"tasks": [
 		{
 			"type": "npm",
-			"script": "watch",
-			"problemMatcher": "$tsc-watch",
-			"isBackground": true,
+			"script": "compile",
+			"label": "npm: compile",
+			"problemMatcher": "$tsc",
 			"presentation": {
-				"reveal": "never"
+				"reveal": "silent"
 			},
 			"group": {
 				"kind": "build",
 				"isDefault": true
 			}
+		},
+		{
+			"type": "npm",
+			"script": "watch",
+			"label": "npm: watch",
+			"detail": "tsc -watch -p ./",
+			"isBackground": true,
+			"problemMatcher": {
+				"base": "$tsc-watch",
+				"applyTo": "allDocuments",
+				"background": {
+					"activeOnStart": true,
+					"beginsPattern": "Starting compilation in watch mode...",
+					"endsPattern": "Found [0-9]+ errors?. Watching for file changes."
+				}
+			},
+			"presentation": {
+				"reveal": "never"
+			},
+			"dependsOn": [
+				"npm: compile"
+			]
+		},
+		{
+			"label": "Terminate All Tasks",
+			"command": "echo ${input:terminate}",
+			"type": "shell",
+			"problemMatcher": []
+		}
+	],
+	"inputs": [
+		{
+			"id": "terminate",
+			"type": "command",
+			"command": "workbench.action.tasks.terminate",
+			"args": "terminateAll"
 		}
 	]
 }

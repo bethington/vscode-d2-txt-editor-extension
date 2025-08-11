@@ -2,7 +2,7 @@
   "name": "vscode-d2-txt-editor-extension",
   "displayName": "Diablo II .txt Editor",
   "publisher": "bethington",
-  "description": "Interactive editor for Diablo II's tab-delimited .txt game data files",
+  "description": "Interactive editor for Diablo II's tab-delimited .txt game data files and other TSV files",
   "icon": "images/icon.jpg",
   "repository": {
     "type": "git",
@@ -19,11 +19,11 @@
     "Other"
   ],
   "activationEvents": [
+    "onLanguage:tsv",
     "onCommand:tsv.toggleExtension",
     "onCommand:tsv.toggleHeader",
     "onCommand:tsv.toggleSerialIndex",
-    "onCommand:tsv.changeFontFamily",
-    "onCommand:tsv.openAsText"
+    "onCommand:tsv.changeFontFamily"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -31,6 +31,7 @@
       {
         "id": "tsv",
         "extensions": [
+          ".tsv",
           "actinfo.txt",
           "armor.txt",
           "armtype.txt",
@@ -120,6 +121,8 @@
           "weapons.txt"
         ],
         "aliases": [
+          "TSV",
+          "tsv",
           "Diablo II Data Files"
         ],
         "configuration": "./language-configuration.json"
@@ -141,10 +144,6 @@
       {
         "command": "tsv.changeFontFamily",
         "title": "TSV: Change Font Family"
-      },
-      {
-        "command": "tsv.openAsText",
-        "title": "TSV: Open as Raw Text"
       }
     ],
     "configuration": {
@@ -182,8 +181,11 @@
     "customEditors": [
       {
         "viewType": "tsv.editor",
-        "displayName": "Diablo II Data Files Editor",
+        "displayName": "TSV & Diablo II Data Files",
         "selector": [
+          {
+            "filenamePattern": "*.tsv"
+          },
           {
             "filenamePattern": "actinfo.txt"
           },

@@ -578,6 +578,7 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
    */
   private wrapHtml(content: string, nonce: string, fontFamily: string, cellPadding: number): string {
     const isDark = vscode.window.activeColorTheme.kind === vscode.ColorThemeKind.Dark;
+    const fileName = this.document.uri.path.split('/').pop() || this.document.uri.path.split('\\').pop() || 'Unknown File';
     return `<!DOCTYPE html>
 <html>
   <head>
@@ -587,31 +588,49 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     <title>CSV</title>
     <style nonce="${nonce}">
       body { font-family: ${fontFamily}; margin: 0; padding: 0; user-select: none; }
-      .table-container { overflow-x: auto; max-height: 100vh; }
+      .toolbar {
+        display: flex;
+        justify-content: space-between;
+        background-color: ${isDark ? '#252526' : '#f3f3f3'};
+        padding: 0;
+        border-bottom: 1px solid ${isDark ? '#3c3c3c' : '#e7e7e7'};
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+      }
+      .toolbar-title {
+        font-weight: 500;
+        color: ${isDark ? '#cccccc' : '#333333'};
+        align-self: center;
+      }
+      .toolbar-actions {
+        display: flex;
+        gap: 0;
+      }
+      .table-container { 
+        overflow-x: auto; 
+        height: calc(100vh - 45px); /* Adjust for toolbar height */
+      }
       table { border-collapse: collapse; width: max-content; }
       th, td { padding: ${cellPadding}px 8px; border: 1px solid ${isDark ? '#555' : '#ccc'}; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-      th { position: sticky; top: 0; background-color: ${isDark ? '#1e1e1e' : '#ffffff'}; }
+      th { position: sticky; top: 0; background-color: ${isDark ? '#1e1e1e' : '#ffffff'}; z-index: 10; }
       td.selected, th.selected { background-color: ${isDark ? '#333333' : '#cce0ff'} !important; }
       td.editing, th.editing { overflow: visible !important; white-space: normal !important; max-width: none !important; }
       .highlight { background-color: ${isDark ? '#222222' : '#fefefe'} !important; }
       .active-match { background-color: ${isDark ? '#444444' : '#ffffcc'} !important; }
-      #editAsTextButton {
-        position: fixed;
-        top: 10px;
-        right: 10px;
-        z-index: 1001;
+      .btn {
         background-color: ${isDark ? '#333333' : '#f0f0f0'};
         color: ${isDark ? '#ffffff' : '#333333'};
         border: 1px solid ${isDark ? '#555555' : '#cccccc'};
         border-radius: 4px;
-        padding: 6px 12px;
+        padding: 0;
         font-size: 12px;
         cursor: pointer;
         display: flex;
         align-items: center;
         font-family: ${fontFamily};
       }
-      #editAsTextButton:hover {
+      .btn:hover {
         background-color: ${isDark ? '#444444' : '#e0e0e0'};
       }
       #findWidget {
@@ -656,7 +675,12 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     </style>
   </head>
   <body>
-    <button id="editAsTextButton" title="Edit with default text editor">Edit as Raw Text</button>
+    <div class="toolbar">
+      <div class="toolbar-title">${fileName}</div>
+      <div class="toolbar-actions">
+        <button id="editAsTextButton" class="btn" title="Edit with default text editor (Alt+E)" style="padding: 0;">Edit as Raw Text</button>
+      </div>
+    </div>
     ${content}
     <div id="findWidget">
       <input id="findInput" type="text" placeholder="Find...">
@@ -677,6 +701,14 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
       const editAsTextButton = document.getElementById('editAsTextButton');
       editAsTextButton.addEventListener('click', () => {
         vscode.postMessage({ type: 'openAsText' });
+      });
+      
+      // Add keyboard shortcut for "Edit as Raw Text"
+      document.addEventListener('keydown', (e) => {
+        if (e.altKey && e.key === 'e') {
+          e.preventDefault();
+          vscode.postMessage({ type: 'openAsText' });
+        }
       });
       /* ──────────── VIRTUAL-SCROLL LOADER ──────────── */
       const CHUNK_SIZE = 1000;

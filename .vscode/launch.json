@@ -15,7 +15,32 @@
 			"outFiles": [
 				"${workspaceFolder}/out/**/*.js"
 			],
-			"preLaunchTask": "${defaultBuildTask}"
+			"preLaunchTask": "npm: compile",
+			"resolveSourceMapLocations": [
+				"${workspaceFolder}/**",
+				"!**/node_modules/**"
+			],
+			"smartStep": true,
+			"sourceMaps": true
+		},
+		{
+			"name": "Run Extension (with Watch)",
+			"type": "extensionHost",
+			"request": "launch",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}"
+			],
+			"outFiles": [
+				"${workspaceFolder}/out/**/*.js"
+			],
+			"preLaunchTask": "npm: watch",
+			"postDebugTask": "Terminate All Tasks",
+			"resolveSourceMapLocations": [
+				"${workspaceFolder}/**",
+				"!**/node_modules/**"
+			],
+			"smartStep": true,
+			"sourceMaps": true
 		}
 	]
 }
