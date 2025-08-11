@@ -40,6 +40,13 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.commands.registerCommand('tsv.toggleSerialIndex', () =>
       toggleBooleanConfig('addSerialIndex', false, 'TSV serial index is now')
     ),
+    vscode.commands.registerCommand('tsv.openAsText', async (uri?: vscode.Uri) => {
+      const documentUri = uri || (vscode.window.activeTextEditor?.document.uri);
+      if (documentUri) {
+        await vscode.commands.executeCommand('vscode.openWith', documentUri, 'default');
+        vscode.window.showInformationMessage('File opened in the default text editor.');
+      }
+    }),
     vscode.commands.registerCommand('csv.changeFontFamily', async () => {
       const csvCfg     = vscode.workspace.getConfiguration('csv');
       const editorCfg  = vscode.workspace.getConfiguration('editor');
@@ -143,6 +150,9 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
       ascending?: boolean;
     }) => {
       switch (e.type) {
+        case 'openAsText':
+          await vscode.commands.executeCommand('tsv.openAsText', document.uri);
+          break;
         case 'editCell':
           if (e.row !== undefined && e.col !== undefined && e.value !== undefined) {
             this.updateDocument(e.row, e.col, e.value);
@@ -585,6 +595,25 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
       td.editing, th.editing { overflow: visible !important; white-space: normal !important; max-width: none !important; }
       .highlight { background-color: ${isDark ? '#222222' : '#fefefe'} !important; }
       .active-match { background-color: ${isDark ? '#444444' : '#ffffcc'} !important; }
+      #editAsTextButton {
+        position: fixed;
+        top: 10px;
+        right: 10px;
+        z-index: 1001;
+        background-color: ${isDark ? '#333333' : '#f0f0f0'};
+        color: ${isDark ? '#ffffff' : '#333333'};
+        border: 1px solid ${isDark ? '#555555' : '#cccccc'};
+        border-radius: 4px;
+        padding: 6px 12px;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        font-family: ${fontFamily};
+      }
+      #editAsTextButton:hover {
+        background-color: ${isDark ? '#444444' : '#e0e0e0'};
+      }
       #findWidget {
         position: fixed;
         top: 20px;
@@ -627,6 +656,7 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     </style>
   </head>
   <body>
+    <button id="editAsTextButton" title="Edit with default text editor">Edit as Raw Text</button>
     ${content}
     <div id="findWidget">
       <input id="findInput" type="text" placeholder="Find...">
@@ -642,6 +672,12 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
       let startCell = null, endCell = null, selectionMode = "cell";
       let editingCell = null, originalCellValue = "";
       const table = document.querySelector('table');
+      
+      // Setup edit as text button
+      const editAsTextButton = document.getElementById('editAsTextButton');
+      editAsTextButton.addEventListener('click', () => {
+        vscode.postMessage({ type: 'openAsText' });
+      });
       /* ──────────── VIRTUAL-SCROLL LOADER ──────────── */
       const CHUNK_SIZE = 1000;
       const chunkScript = document.getElementById('__csvChunks');

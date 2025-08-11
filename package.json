@@ -23,7 +23,8 @@
     "onCommand:tsv.toggleExtension",
     "onCommand:tsv.toggleHeader",
     "onCommand:tsv.toggleSerialIndex",
-    "onCommand:tsv.changeFontFamily"
+    "onCommand:tsv.changeFontFamily",
+    "onCommand:tsv.openAsText"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -144,6 +145,10 @@
       {
         "command": "tsv.changeFontFamily",
         "title": "TSV: Change Font Family"
+      },
+      {
+        "command": "tsv.openAsText",
+        "title": "TSV: Open as Raw Text"
       }
     ],
     "configuration": {
