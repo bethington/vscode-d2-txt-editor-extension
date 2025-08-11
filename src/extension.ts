@@ -732,6 +732,27 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
         });
         tableHtml += `</tr>`;
       });
+      
+      // Add base-only rows at the end (rows that exist in base game but not in current file)
+      if (this.diffMode && diffData.length > 0) {
+        const baseOnlyRows = diffData.filter(diffRow => diffRow.status === 'base-only' && !diffRow.isHeader);
+        baseOnlyRows.forEach((diffRow, index) => {
+          const displayRowIndex = bodyData.length + index + 1;
+          tableHtml += `<tr style="opacity: 0.7; background-color: ${isDark ? '#1a2e1a' : '#e3f2fd'};">${
+            addSerialIndex
+              ? `<td tabindex="0" style="min-width: 4ch; max-width: 4ch; border: 1px solid ${isDark ? '#555' : '#ccc'}; color: #888; font-style: italic;" data-row="${displayRowIndex}" data-col="-1">[${displayRowIndex}]</td>`
+              : ''
+          }`;
+          
+          // Generate cells for the base-only row
+          diffRow.cells.forEach((diffCell, i) => {
+            const safe = this.escapeHtml(diffCell.baseValue);
+            tableHtml += this.generateCellHtml(safe, displayRowIndex, i, columnWidths[i] || 0, columnColors[i], isDark, diffCell);
+          });
+          tableHtml += `</tr>`;
+        });
+      }
+      
       tableHtml += `</tbody>`;
     } else {
       tableHtml += `<tbody>`;
@@ -748,6 +769,27 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
         });
         tableHtml += `</tr>`;
       });
+      
+      // Add base-only rows at the end (rows that exist in base game but not in current file)
+      if (this.diffMode && diffData.length > 0) {
+        const baseOnlyRows = diffData.filter(diffRow => diffRow.status === 'base-only' && !diffRow.isHeader);
+        baseOnlyRows.forEach((diffRow, index) => {
+          const displayRowIndex = data.length + index;
+          tableHtml += `<tr style="opacity: 0.7; background-color: ${isDark ? '#1a2e1a' : '#e3f2fd'};">${
+            addSerialIndex
+              ? `<td tabindex="0" style="min-width: 4ch; max-width: 4ch; border: 1px solid ${isDark ? '#555' : '#ccc'}; color: #888; font-style: italic;" data-row="${displayRowIndex}" data-col="-1">[${displayRowIndex + 1}]</td>`
+              : ''
+          }`;
+          
+          // Generate cells for the base-only row
+          diffRow.cells.forEach((diffCell, i) => {
+            const safe = this.escapeHtml(diffCell.baseValue);
+            tableHtml += this.generateCellHtml(safe, displayRowIndex, i, columnWidths[i] || 0, columnColors[i], isDark, diffCell);
+          });
+          tableHtml += `</tr>`;
+        });
+      }
+      
       tableHtml += `</tbody>`;
     }
     tableHtml += `</table>`;
