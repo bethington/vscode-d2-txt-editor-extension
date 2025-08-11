@@ -639,12 +639,12 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     if (treatHeader) {
       tableHtml += `<thead><tr>${
         addSerialIndex
-          ? `<th style="min-width: 4ch; max-width: 4ch; border: 1px solid ${isDark ? '#555' : '#ccc'}; background-color: ${isDark ? '#1e1e1e' : '#ffffff'}; color: #888;">#</th>`
+          ? `<th style="min-width: 4ch; max-width: 4ch; border: 1px solid ${isDark ? '#555' : '#ccc'}; background: linear-gradient(135deg, ${isDark ? '#3a3a3a' : '#f8f9fa'}, ${isDark ? '#2a2a2a' : '#e9ecef'}); color: ${isDark ? '#cccccc' : '#495057'}; font-weight: bold; text-align: center; padding: 8px 4px; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">#</th>`
           : ''
       }`;
       headerRow.forEach((cell, i) => {
         const safe = this.escapeHtml(cell);
-        tableHtml += `<th style="min-width: ${Math.min(columnWidths[i] || 0, 100)}ch; max-width: 100ch; border: 1px solid ${isDark ? '#555' : '#ccc'}; background-color: ${isDark ? '#1e1e1e' : '#ffffff'}; color: ${columnColors[i]}; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;" data-row="0" data-col="${i}">${safe}</th>`;
+        tableHtml += `<th style="min-width: ${Math.min(columnWidths[i] || 0, 100)}ch; max-width: 100ch; border: 1px solid ${isDark ? '#555' : '#ccc'}; background: linear-gradient(135deg, ${isDark ? '#3a3a3a' : '#f8f9fa'}, ${isDark ? '#2a2a2a' : '#e9ecef'}); color: ${isDark ? '#ffffff' : '#212529'}; font-weight: bold; text-align: center; padding: 8px 6px; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-shadow: ${isDark ? '0 1px 1px rgba(255,255,255,0.1)' : '0 1px 1px rgba(0,0,0,0.1)'};" data-row="0" data-col="${i}">${safe}</th>`;
       });
       tableHtml += `</tr></thead><tbody>`;
       bodyData.forEach((row, r) => {
@@ -786,7 +786,24 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
       }
       table { border-collapse: collapse; width: max-content; }
       th, td { padding: ${cellPadding}px 8px; border: 1px solid ${isDark ? '#555' : '#ccc'}; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
-      th { position: sticky; top: 0; background-color: ${isDark ? '#1e1e1e' : '#ffffff'}; z-index: 10; }
+      th { 
+        position: sticky; 
+        top: 0; 
+        background: linear-gradient(135deg, ${isDark ? '#3a3a3a' : '#f8f9fa'}, ${isDark ? '#2a2a2a' : '#e9ecef'}); 
+        z-index: 10; 
+        font-weight: bold;
+        text-align: center;
+        color: ${isDark ? '#ffffff' : '#212529'};
+        text-shadow: ${isDark ? '0 1px 1px rgba(255,255,255,0.1)' : '0 1px 1px rgba(0,0,0,0.1)'};
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        border-bottom: 2px solid ${isDark ? '#666' : '#aaa'};
+        transition: all 0.2s ease;
+      }
+      th:hover {
+        background: linear-gradient(135deg, ${isDark ? '#4a4a4a' : '#ffffff'}, ${isDark ? '#3a3a3a' : '#f0f0f0'});
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+      }
       td.selected, th.selected { background-color: ${isDark ? '#333333' : '#cce0ff'} !important; }
       td.editing, th.editing { overflow: visible !important; white-space: normal !important; max-width: none !important; }
       .highlight { background-color: ${isDark ? '#222222' : '#fefefe'} !important; }
