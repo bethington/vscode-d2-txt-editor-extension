@@ -623,7 +623,7 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
         color: ${isDark ? '#ffffff' : '#333333'};
         border: 1px solid ${isDark ? '#555555' : '#cccccc'};
         border-radius: 4px;
-        padding: 0;
+        padding: 0 8px;
         font-size: 12px;
         cursor: pointer;
         display: flex;
@@ -678,7 +678,7 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     <div class="toolbar">
       <div class="toolbar-title">${fileName}</div>
       <div class="toolbar-actions">
-        <button id="editAsTextButton" class="btn" title="Edit with default text editor (Alt+E)" style="padding: 0;">Edit as Raw Text</button>
+        <button id="editAsTextButton" class="btn" title="Edit with default text editor (Alt+E)" style="padding: 0 8px;">Edit as Text</button>
       </div>
     </div>
     ${content}
@@ -703,7 +703,7 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
         vscode.postMessage({ type: 'openAsText' });
       });
       
-      // Add keyboard shortcut for "Edit as Raw Text"
+      // Add keyboard shortcut for "Edit as Text"
       document.addEventListener('keydown', (e) => {
         if (e.altKey && e.key === 'e') {
           e.preventDefault();
@@ -1272,25 +1272,38 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
    * Returns a color (in hex) for a column based on its estimated type, current theme, and column index.
    */
   private getColumnColor(type: string, isDark: boolean, columnIndex: number): string {
-    let hueRange = 0, isDefault = false;
-    switch (type){
-      case "boolean": hueRange = 30; break;
-      case "date": hueRange = 210; break;
-      case "float": hueRange = isDark ? 60 : 270; break;
-      case "integer": hueRange = 120; break;
-      case "string": hueRange = 0; break;
-      case "empty": isDefault = true; break;
-    }
-    if (isDefault) {
-      return isDark ? "#BBB" : "#444";
-    }
-    const saturationOffset = ((columnIndex * 7) % 31) - 15;
-    const saturation = saturationOffset + (isDark ? 60 : 80);
-    const lightnessOffset = ((columnIndex * 13) % 31) - 15;
-    const lightness = lightnessOffset + (isDark ? 70 : 30);
-    const hueOffset = ((columnIndex * 17) % 31) - 15;
-    const finalHue = (hueRange + hueOffset + 360) % 360;
-    return this.hslToHex(finalHue, saturation, lightness);
+    // Rainbow colors with high contrast and easy distinguishability
+    const rainbowColors = isDark ? [
+      '#FF6B6B', // Red
+      '#4ECDC4', // Teal
+      '#45B7D1', // Blue
+      '#96CEB4', // Mint Green
+      '#FFEAA7', // Yellow
+      '#DDA0DD', // Plum
+      '#98D8C8', // Aqua
+      '#F7DC6F', // Light Yellow
+      '#BB8FCE', // Light Purple
+      '#85C1E9', // Light Blue
+      '#82E0AA', // Light Green
+      '#F8C471'  // Orange
+    ] : [
+      '#C0392B', // Dark Red
+      '#138D75', // Dark Teal
+      '#2980B9', // Dark Blue
+      '#27AE60', // Dark Green
+      '#F39C12', // Dark Orange
+      '#8E44AD', // Dark Purple
+      '#16A085', // Dark Cyan
+      '#D35400', // Dark Orange-Red
+      '#7D3C98', // Dark Violet
+      '#1F618D', // Dark Steel Blue
+      '#239B56', // Dark Forest Green
+      '#CA6F1E'  // Dark Burnt Orange
+    ];
+
+    // Use modulo to repeat the pattern if there are more columns than colors
+    const colorIndex = columnIndex % rainbowColors.length;
+    return rainbowColors[colorIndex];
   }
 
   /**
