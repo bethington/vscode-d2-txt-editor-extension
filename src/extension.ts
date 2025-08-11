@@ -2,6 +2,17 @@ import { getFonts } from 'font-list';
 import Papa from 'papaparse';
 import * as vscode from 'vscode';
 
+// Type definitions for message events from the webview
+interface WebviewMessage {
+  type: string;
+  row: number;
+  col: number;
+  value: string;
+  text: string;
+  index: number;
+  ascending: boolean;
+}
+
 /**
  * Activates the TSV extension by registering commands and the custom TSV editor.
  */
@@ -115,46 +126,68 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     webviewPanel.webview.options = { enableScripts: true };
     this.updateWebviewContent();
     webviewPanel.webview.postMessage({ type: 'focus' });
-    webviewPanel.onDidChangeViewState(e => {
+    webviewPanel.onDidChangeViewState((e: vscode.WebviewPanelOnDidChangeViewStateEvent) => {
       if (e.webviewPanel.active) {
         e.webviewPanel.webview.postMessage({ type: 'focus' });
       }
     });
 
     // Handle messages from the webview.
-    webviewPanel.webview.onDidReceiveMessage(async e => {
+    webviewPanel.webview.onDidReceiveMessage(async (e: { 
+      type: string;
+      row?: number;
+      col?: number;
+      value?: string;
+      text?: string;
+      index?: number;
+      ascending?: boolean;
+    }) => {
       switch (e.type) {
         case 'editCell':
-          this.updateDocument(e.row, e.col, e.value);
+          if (e.row !== undefined && e.col !== undefined && e.value !== undefined) {
+            this.updateDocument(e.row, e.col, e.value);
+          }
           break;
         case 'save':
           await this.handleSave();
           break;
         case 'copyToClipboard':
-          await vscode.env.clipboard.writeText(e.text);
-          console.log('TSV: Copied to clipboard');
+          if (e.text !== undefined) {
+            await vscode.env.clipboard.writeText(e.text);
+            console.log('TSV: Copied to clipboard');
+          }
           break;
         case 'insertColumn':
-          await this.insertColumn(e.index);
+          if (e.index !== undefined) {
+            await this.insertColumn(e.index);
+          }
           break;
         case 'deleteColumn':
-          await this.deleteColumn(e.index);
+          if (e.index !== undefined) {
+            await this.deleteColumn(e.index);
+          }
           break;
         /* ──────── NEW ──────── */
         case 'insertRow':
-          await this.insertRow(e.index);
+          if (e.index !== undefined) {
+            await this.insertRow(e.index);
+          }
           break;
         case 'deleteRow':
-          await this.deleteRow(e.index);
+          if (e.index !== undefined) {
+            await this.deleteRow(e.index);
+          }
           break;
         case 'sortColumn':
-          await this.sortColumn(e.index, e.ascending);
+          if (e.index !== undefined && e.ascending !== undefined) {
+            await this.sortColumn(e.index, e.ascending);
+          }
           break;
       }
     });
 
     // Update the webview when the document changes externally.
-    const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument(e => {
+    const changeDocumentSubscription = vscode.workspace.onDidChangeTextDocument((e: vscode.TextDocumentChangeEvent) => {
       if (e.document.uri.toString() === document.uri.toString() && !this.isUpdatingDocument && !this.isSaving) {
         setTimeout(() => this.updateWebviewContent(), 250);
       }
