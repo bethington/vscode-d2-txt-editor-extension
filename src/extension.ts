@@ -832,7 +832,12 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
           return;
         }
 
-        if(editingCell){ if(e.target !== editingCell) editingCell.blur(); else return; } else clearSelection();
+        // Always exit edit mode when clicking on any cell
+        if(editingCell) { 
+          editingCell.blur(); 
+        } else {
+          clearSelection();
+        }
 
         /* ──────── NEW: select-all via top-left header cell ──────── */
         if (
@@ -1134,7 +1139,15 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
         cell.addEventListener('blur', onBlurHandler);
         event ? setCursorAtPoint(cell, event.clientX, event.clientY) : setCursorToEnd(cell);
       };
-      table.addEventListener('dblclick', e => { const target = e.target; if(target.tagName !== 'TD' && target.tagName !== 'TH') return; clearSelection(); editCell(target, e); });
+      table.addEventListener('dblclick', e => { 
+        const target = e.target; 
+        if(target.tagName !== 'TD' && target.tagName !== 'TH') return; 
+        // Immediately exit/blur the cell instead of entering edit mode
+        if(editingCell) {
+          editingCell.blur();
+        }
+        clearSelection(); 
+      });
       const copySelectionToClipboard = () => {
         if (currentSelection.length === 0) return;
 
