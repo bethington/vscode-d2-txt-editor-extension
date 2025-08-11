@@ -1,6 +1,8 @@
 import { getFonts } from 'font-list';
 import Papa from 'papaparse';
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs';
 
 // Type definitions for message events from the webview
 interface WebviewMessage {
@@ -11,6 +13,23 @@ interface WebviewMessage {
   text: string;
   index: number;
   ascending: boolean;
+}
+
+// Type definitions for diff comparison
+interface DiffCell {
+  columnIndex: number;
+  baseValue: string;
+  modValue: string;
+  status: 'same' | 'modified' | 'base-only' | 'mod-only';
+}
+
+interface DiffRow {
+  rowIndex: number;
+  baseRowIndex: number;
+  modRowIndex: number;
+  cells: DiffCell[];
+  status: 'same' | 'modified' | 'base-only' | 'mod-only';
+  isHeader?: boolean;
 }
 
 /**
@@ -101,6 +120,20 @@ export function activate(context: vscode.ExtensionContext) {
         await config.update('basePath', result, vscode.ConfigurationTarget.Global);
         vscode.window.showInformationMessage(`Diablo II base path set to: ${result}`);
       }
+    }),
+    vscode.commands.registerCommand('diablo2TxtEditor.openDiffViewer', async (uri?: vscode.Uri) => {
+      const documentUri = uri || (vscode.window.activeTextEditor?.document.uri);
+      if (documentUri) {
+        // Find the active TSV editor for this document
+        const editor = TsvEditorProvider.editors.find(e => e.document?.uri.toString() === documentUri.toString());
+        if (editor) {
+          await editor.toggleDiffMode();
+        } else {
+          vscode.window.showErrorMessage('No active Diablo II editor found for this file');
+        }
+      } else {
+        vscode.window.showErrorMessage('No active file to compare');
+      }
     })
 
   );
@@ -155,7 +188,9 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
   private isUpdatingDocument = false;
   private isSaving = false;
   private currentWebviewPanel: vscode.WebviewPanel | undefined;
-  private document!: vscode.TextDocument;
+  public document!: vscode.TextDocument;
+  private diffMode = false;
+  private baseFileData: string[][] = [];
 
   constructor(private readonly context: vscode.ExtensionContext) {}
 
@@ -198,6 +233,19 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
       switch (e.type) {
         case 'openAsText':
           await vscode.commands.executeCommand('tsv.openAsText', document.uri);
+          break;
+        case 'toggleDiffMode':
+          await this.toggleDiffMode();
+          break;
+        case 'acceptDiffChange':
+          if (e.row !== undefined && e.col !== undefined) {
+            await this.acceptDiffChange(e.row, e.col);
+          }
+          break;
+        case 'acceptDiffRow':
+          if (e.row !== undefined) {
+            await this.acceptDiffRow(e.row);
+          }
           break;
         case 'editCell':
           if (e.row !== undefined && e.col !== undefined && e.value !== undefined) {
@@ -539,6 +587,10 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     const columnTypes = columnData.map(col => this.estimateColumnDataType(col));
     const columnColors = columnTypes.map((type, i) => this.getColumnColor(type, isDark, i));
     const columnWidths = this.computeColumnWidths(data);
+
+    // Generate diff data if in diff mode
+    const diffData = this.diffMode ? this.generateDiffData(data) : [];
+
     /* ──────────── VIRTUAL-SCROLL SUPPORT ──────────── */
     const CHUNK_SIZE = 1000;                           // rows per chunk
     const allRows      = treatHeader ? bodyData : data;
@@ -550,7 +602,8 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
           const absRow = treatHeader ? i + localR + 1 : i + localR;
           const cells  = row.map((cell, cIdx) => {
             const safe = this.escapeHtml(cell);
-            return `<td tabindex="0" style="min-width:${Math.min(columnWidths[cIdx]||0,100)}ch;max-width:100ch;border:1px solid ${isDark?'#555':'#ccc'};color:${columnColors[cIdx]};overflow:hidden;white-space:nowrap;text-overflow:ellipsis;" data-row="${absRow}" data-col="${cIdx}">${safe}</td>`;
+            const diffInfo = this.getDiffInfoForCell(diffData, absRow, cIdx);
+            return this.generateCellHtml(safe, absRow, cIdx, columnWidths[cIdx] || 0, columnColors[cIdx], isDark, diffInfo);
           }).join('');
 
           return `<tr>${
@@ -590,7 +643,8 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
         }`;
         row.forEach((cell, i) => {
           const safe = this.escapeHtml(cell);
-          tableHtml += `<td tabindex="0" style="min-width: ${Math.min(columnWidths[i] || 0, 100)}ch; max-width: 100ch; border: 1px solid ${isDark ? '#555' : '#ccc'}; color: ${columnColors[i]}; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;" data-row="${r + 1}" data-col="${i}">${safe}</td>`;
+          const diffInfo = this.getDiffInfoForCell(diffData, r + 1, i);
+          tableHtml += this.generateCellHtml(safe, r + 1, i, columnWidths[i] || 0, columnColors[i], isDark, diffInfo);
         });
         tableHtml += `</tr>`;
       });
@@ -605,7 +659,8 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
         }`;
         row.forEach((cell, i) => {
           const safe = this.escapeHtml(cell);
-          tableHtml += `<td tabindex="0" style="min-width: ${Math.min(columnWidths[i] || 0, 100)}ch; max-width: 100ch; border: 1px solid ${isDark ? '#555' : '#ccc'}; color: ${columnColors[i]}; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;" data-row="${r}" data-col="${i}">${safe}</td>`;
+          const diffInfo = this.getDiffInfoForCell(diffData, r, i);
+          tableHtml += this.generateCellHtml(safe, r, i, columnWidths[i] || 0, columnColors[i], isDark, diffInfo);
         });
         tableHtml += `</tr>`;
       });
@@ -617,6 +672,66 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
       <script id="__csvChunks" type="application/json">${chunksJson}</script>
       <div class="table-container">${tableHtml}</div>
     `;
+  }
+
+  /**
+   * Helper method to get diff information for a specific cell
+   */
+  private getDiffInfoForCell(diffData: DiffRow[], row: number, col: number): DiffCell | undefined {
+    if (!diffData || diffData.length === 0) {
+      return undefined;
+    }
+    
+    // Find the diff row for this row index
+    const diffRow = diffData.find(d => d.rowIndex === row);
+    if (!diffRow) {
+      return undefined;
+    }
+    
+    // Find the diff cell for this column
+    return diffRow.cells.find(c => c.columnIndex === col);
+  }
+
+  /**
+   * Helper method to generate HTML for a table cell with diff information
+   */
+  private generateCellHtml(
+    cellValue: string, 
+    row: number, 
+    col: number, 
+    width: number, 
+    color: string, 
+    isDark: boolean, 
+    diffInfo?: DiffCell
+  ): string {
+    const minWidth = Math.min(width, 100);
+    const borderColor = isDark ? '#555' : '#ccc';
+    
+    // Base cell style
+    let cellStyle = `min-width: ${minWidth}ch; max-width: 100ch; border: 1px solid ${borderColor}; color: ${color}; overflow: hidden; white-space: nowrap; text-overflow: ellipsis;`;
+    
+    // Add diff styling if in diff mode
+    if (diffInfo) {
+      if (diffInfo.status === 'modified') {
+        cellStyle += ` background-color: ${isDark ? '#4a3d1a' : '#fff3cd'}; border-left: 3px solid ${isDark ? '#ffc107' : '#856404'};`;
+      } else if (diffInfo.status === 'base-only') {
+        cellStyle += ` background-color: ${isDark ? '#1a2e1a' : '#d1edff'}; border-left: 3px solid ${isDark ? '#28a745' : '#007bff'};`;
+      }
+    }
+    
+    let cellContent = cellValue;
+    
+    // Add diff overlay if there's base content to show
+    if (diffInfo && diffInfo.baseValue !== undefined && diffInfo.baseValue !== cellValue) {
+      cellContent = `
+        <div style="position: relative;">
+          <div style="font-weight: bold;">${cellValue}</div>
+          <div style="font-size: 0.85em; color: ${isDark ? '#888' : '#666'}; font-style: italic;">Base: ${this.escapeHtml(diffInfo.baseValue)}</div>
+        </div>
+      `;
+    }
+    
+    return `<td tabindex="0" style="${cellStyle}" data-row="${row}" data-col="${col}">${cellContent}</td>`;
   }
 
   /**
@@ -724,6 +839,7 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     <div class="toolbar">
       <div class="toolbar-title">${fileName}</div>
       <div class="toolbar-actions">
+        <button id="compareButton" class="btn" title="Compare with base game file (Alt+C)" style="padding: 0 8px;">Compare</button>
         <button id="editAsTextButton" class="btn" title="Edit with default text editor (Alt+E)" style="padding: 0 8px;">Edit as Text</button>
       </div>
     </div>
@@ -749,11 +865,21 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
         vscode.postMessage({ type: 'openAsText' });
       });
       
-      // Add keyboard shortcut for "Edit as Text"
+      // Setup compare button
+      const compareButton = document.getElementById('compareButton');
+      compareButton.addEventListener('click', () => {
+        vscode.postMessage({ type: 'toggleDiffMode' });
+      });
+      
+      // Add keyboard shortcuts
       document.addEventListener('keydown', (e) => {
         if (e.altKey && e.key === 'e') {
           e.preventDefault();
           vscode.postMessage({ type: 'openAsText' });
+        }
+        if (e.altKey && e.key === 'c') {
+          e.preventDefault();
+          vscode.postMessage({ type: 'toggleDiffMode' });
         }
       });
       /* ──────────── VIRTUAL-SCROLL LOADER ──────────── */
@@ -829,6 +955,17 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
           item('Add COLUMN: left',  () => vscode.postMessage({ type: 'insertColumn', index: col     }));
           item('Add COLUMN: right', () => vscode.postMessage({ type: 'insertColumn', index: col + 1 }));
           item('Delete COLUMN',     () => vscode.postMessage({ type: 'deleteColumn', index: col     }));
+        }
+
+        /* Diff mode section */
+        // Check if we're in diff mode by looking for diff indicators
+        const cell = document.querySelector(\`[data-row="\${row}"][data-col="\${col}"]\`);
+        if (cell && cell.querySelector('.diff-indicator')) {
+          if (contextMenu.children.length) divider();
+          item('← Accept Cell', () => vscode.postMessage({ type: 'acceptDiffChange', row: row, col: col }));
+          if (!isNaN(row) && row >= 0) {
+            item('← Accept Row', () => vscode.postMessage({ type: 'acceptDiffRow', row: row }));
+          }
         }
 
         contextMenu.style.left = x + 'px';
@@ -1382,6 +1519,176 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     const g = Math.round(255 * f(8));
     const b = Math.round(255 * f(4));
     return "#" + [r, g, b].map(x => x.toString(16).padStart(2, '0')).join('');
+  }
+
+  // ───────────── Diff Mode Methods ─────────────
+
+  /**
+   * Toggles diff mode on/off
+   */
+  public async toggleDiffMode() {
+    if (!this.diffMode) {
+      // Entering diff mode - load base file
+      const basePath = getDiablo2BasePath();
+      if (!basePath) {
+        vscode.window.showErrorMessage('Please set the Diablo II base path first using the "Set Diablo II Base Path" command');
+        return;
+      }
+
+      const modFileName = path.basename(this.document.uri.fsPath);
+      const baseFilePath = path.join(basePath, 'global', 'excel', modFileName);
+
+      if (!fs.existsSync(baseFilePath)) {
+        vscode.window.showErrorMessage(`Base game file not found: ${baseFilePath}`);
+        return;
+      }
+
+      try {
+        const baseFileContent = fs.readFileSync(baseFilePath, 'utf8');
+        this.baseFileData = Papa.parse(baseFileContent, { dynamicTyping: false, delimiter: '\t' }).data as string[][];
+        this.diffMode = true;
+        vscode.window.showInformationMessage('Diff mode enabled - showing changes from base game file');
+      } catch (error) {
+        vscode.window.showErrorMessage(`Error reading base file: ${error}`);
+        return;
+      }
+    } else {
+      // Exiting diff mode
+      this.diffMode = false;
+      this.baseFileData = [];
+      vscode.window.showInformationMessage('Diff mode disabled');
+    }
+
+    // Refresh the view
+    this.updateWebviewContent();
+  }
+
+  /**
+   * Accepts a single cell change from base to mod
+   */
+  private async acceptDiffChange(row: number, col: number) {
+    if (!this.diffMode || this.baseFileData.length === 0) {
+      return;
+    }
+
+    const modData = Papa.parse(this.document.getText(), { dynamicTyping: false, delimiter: '\t' }).data as string[][];
+    
+    // Ensure we have the base value to copy
+    if (row < this.baseFileData.length && col < this.baseFileData[row].length) {
+      const baseValue = this.baseFileData[row][col] || '';
+      
+      // Ensure mod data has enough rows/columns
+      while (modData.length <= row) {
+        modData.push([]);
+      }
+      while (modData[row].length <= col) {
+        modData[row].push('');
+      }
+      
+      // Update the mod data
+      modData[row][col] = baseValue;
+      
+      // Save the changes
+      const newContent = Papa.unparse(modData, { delimiter: '\t' });
+      const fullRange = new vscode.Range(0, 0, this.document.lineCount, this.document.lineCount ? this.document.lineAt(this.document.lineCount - 1).text.length : 0);
+      const edit = new vscode.WorkspaceEdit();
+      edit.replace(this.document.uri, fullRange, newContent);
+      await vscode.workspace.applyEdit(edit);
+      
+      // Refresh the view
+      setTimeout(() => this.updateWebviewContent(), 100);
+    }
+  }
+
+  /**
+   * Accepts an entire row from base to mod
+   */
+  private async acceptDiffRow(row: number) {
+    if (!this.diffMode || this.baseFileData.length === 0 || row >= this.baseFileData.length) {
+      return;
+    }
+
+    const modData = Papa.parse(this.document.getText(), { dynamicTyping: false, delimiter: '\t' }).data as string[][];
+    const baseRow = this.baseFileData[row];
+    
+    // Ensure mod data has enough rows
+    while (modData.length <= row) {
+      modData.push([]);
+    }
+    
+    // Copy the entire base row
+    modData[row] = [...baseRow];
+    
+    // Save the changes
+    const newContent = Papa.unparse(modData, { delimiter: '\t' });
+    const fullRange = new vscode.Range(0, 0, this.document.lineCount, this.document.lineCount ? this.document.lineAt(this.document.lineCount - 1).text.length : 0);
+    const edit = new vscode.WorkspaceEdit();
+    edit.replace(this.document.uri, fullRange, newContent);
+    await vscode.workspace.applyEdit(edit);
+    
+    // Refresh the view
+    setTimeout(() => this.updateWebviewContent(), 100);
+  }
+
+  /**
+   * Generates diff data for the current files
+   */
+  private generateDiffData(modData: string[][]): DiffRow[] {
+    if (!this.diffMode || this.baseFileData.length === 0) {
+      return [];
+    }
+
+    const result: DiffRow[] = [];
+    const baseHeaders = this.baseFileData[0] || [];
+    const modHeaders = modData[0] || [];
+
+    // Process all rows, comparing with base data
+    const maxRows = Math.max(this.baseFileData.length, modData.length);
+    
+    for (let row = 0; row < maxRows; row++) {
+      const baseRow = this.baseFileData[row] || [];
+      const modRow = modData[row] || [];
+      const maxCols = Math.max(baseRow.length, modRow.length);
+      
+      const cells: DiffCell[] = [];
+      let hasChanges = false;
+      
+      for (let col = 0; col < maxCols; col++) {
+        const baseValue = baseRow[col] || '';
+        const modValue = modRow[col] || '';
+        
+        let status: 'same' | 'modified' | 'base-only' | 'mod-only' = 'same';
+        
+        if (row >= modData.length || col >= modRow.length) {
+          status = 'base-only';
+          hasChanges = true;
+        } else if (row >= this.baseFileData.length || col >= baseRow.length) {
+          status = 'mod-only';
+          hasChanges = true;
+        } else if (baseValue !== modValue) {
+          status = 'modified';
+          hasChanges = true;
+        }
+        
+        cells.push({
+          columnIndex: col,
+          baseValue,
+          modValue,
+          status
+        });
+      }
+      
+      result.push({
+        rowIndex: row,
+        baseRowIndex: row < this.baseFileData.length ? row : -1,
+        modRowIndex: row < modData.length ? row : -1,
+        cells,
+        status: hasChanges ? (row >= modData.length ? 'base-only' : 'modified') : 'same',
+        isHeader: row === 0
+      });
+    }
+    
+    return result;
   }
 }
 

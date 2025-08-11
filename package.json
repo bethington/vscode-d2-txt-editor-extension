@@ -24,7 +24,8 @@
     "onCommand:tsv.toggleSerialIndex",
     "onCommand:tsv.changeFontFamily",
     "onCommand:tsv.openAsText",
-    "onCommand:diablo2TxtEditor.setBasePath"
+    "onCommand:diablo2TxtEditor.setBasePath",
+    "onCommand:diablo2TxtEditor.openDiffViewer"
   ],
   "main": "./out/extension.js",
   "contributes": {
@@ -150,6 +151,10 @@
       {
         "command": "diablo2TxtEditor.setBasePath",
         "title": "Diablo II: Set Base Path"
+      },
+      {
+        "command": "diablo2TxtEditor.openDiffViewer",
+        "title": "Diablo II: Compare with Base Files"
       }
     ],
     "configuration": {
