@@ -212,11 +212,23 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     this.currentWebviewPanel = webviewPanel;
     TsvEditorProvider.editors.push(this);
     webviewPanel.webview.options = { enableScripts: true };
+    
+    // If diff mode was previously active, refresh it for the new file
+    if (this.diffMode) {
+      await this.refreshDiffMode();
+    }
+    
     this.updateWebviewContent();
     webviewPanel.webview.postMessage({ type: 'focus' });
-    webviewPanel.onDidChangeViewState((e: vscode.WebviewPanelOnDidChangeViewStateEvent) => {
+    webviewPanel.onDidChangeViewState(async (e: vscode.WebviewPanelOnDidChangeViewStateEvent) => {
       if (e.webviewPanel.active) {
         e.webviewPanel.webview.postMessage({ type: 'focus' });
+        
+        // Refresh diff mode when switching to this editor tab
+        if (this.diffMode) {
+          await this.refreshDiffMode();
+          this.updateWebviewContent();
+        }
       }
     });
 
@@ -1561,6 +1573,48 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
 
     // Refresh the view
     this.updateWebviewContent();
+  }
+
+  /**
+   * Refreshes diff mode for the current file (used when switching files)
+   */
+  private async refreshDiffMode() {
+    if (!this.diffMode) {
+      return;
+    }
+
+    const config = vscode.workspace.getConfiguration('diablo2TxtEditor');
+    const basePath = config.get<string>('basePath');
+
+    if (!basePath) {
+      // If no base path is set, just turn off diff mode
+      this.diffMode = false;
+      this.baseFileData = [];
+      return;
+    }
+
+    const modFileName = path.basename(this.document.uri.fsPath);
+    const baseFilePath = path.join(basePath, 'global', 'excel', modFileName);
+
+    if (!fs.existsSync(baseFilePath)) {
+      // If base file doesn't exist for this file, turn off diff mode
+      this.diffMode = false;
+      this.baseFileData = [];
+      vscode.window.showWarningMessage(`Base game file not found for ${modFileName}, diff mode disabled`);
+      return;
+    }
+
+    try {
+      const baseFileContent = fs.readFileSync(baseFilePath, 'utf8');
+      this.baseFileData = Papa.parse(baseFileContent, { dynamicTyping: false, delimiter: '\t' }).data as string[][];
+      // Keep diff mode enabled and show success message
+      vscode.window.showInformationMessage(`Diff mode refreshed for ${modFileName}`);
+    } catch (error) {
+      // If there's an error reading the file, turn off diff mode
+      this.diffMode = false;
+      this.baseFileData = [];
+      vscode.window.showErrorMessage(`Error reading base file for ${modFileName}: ${error}`);
+    }
   }
 
   /**
