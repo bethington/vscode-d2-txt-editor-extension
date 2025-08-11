@@ -104,9 +104,10 @@
   },
   "scripts": {
     "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
     "lint": "eslint **/*.ts",
     "package": "vsce package",
-    "test": "npm run compile && node --test out/test/**/*.test.js"
+    "test": "npm run compile && node --test out/test/provider-utils.test.js out/test/security.test.js"
   },
   "dependencies": {
     "font-list": "^1.5.1",
@@ -121,6 +122,6 @@
     "@typescript-eslint/parser": "^7.9.0",
     "eslint": "^8.57.0",
     "typescript": "^5.3.3",
-    "vsce": "^2.15.0"
+    "vsce": "^2.11.0"
   }
 }

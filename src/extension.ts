@@ -249,8 +249,12 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     if (!editSucceeded) {
       const result = Papa.parse(oldText, { dynamicTyping: false, delimiter: separator });
       const data = result.data as string[][];
-      while (data.length <= row) data.push([]);
-      while (data[row].length <= col) data[row].push('');
+      while (data.length <= row) {
+        data.push([]);
+      }
+      while (data[row].length <= col) {
+        data[row].push('');
+      }
       data[row][col] = value;
       const newCsvText = Papa.unparse(data, { delimiter: separator });
       const fullRange = new vscode.Range(0, 0, this.document.lineCount, this.document.lineCount ? this.document.lineAt(this.document.lineCount - 1).text.length : 0);
@@ -289,7 +293,9 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     const data = result.data as string[][];
     for (const row of data) {
       if (index > row.length) {
-        while (row.length < index) row.push('');
+        while (row.length < index) {
+          row.push('');
+        }
       }
       row.splice(index, 0, '');
     }
@@ -350,7 +356,9 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
 
     const cmp = (a: string, b: string) => {
       const na = parseFloat(a), nb = parseFloat(b);
-      if (!isNaN(na) && !isNaN(nb)) return na - nb;        // numeric compare
+      if (!isNaN(na) && !isNaN(nb)) {
+        return na - nb;        // numeric compare
+      }
       return a.localeCompare(b, undefined, { sensitivity: 'base' });
     };
 
@@ -391,7 +399,9 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     const numColumns = Math.max(...data.map(r => r.length), 0);
     const newRow = Array(numColumns).fill('');
     if (index > data.length) {
-      while (data.length < index) data.push(Array(numColumns).fill(''));
+      while (data.length < index) {
+        data.push(Array(numColumns).fill(''));
+      }
     }
     data.splice(index, 0, newRow);
     const newText = Papa.unparse(data, { delimiter: separator });
@@ -496,8 +506,11 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
       }
 
       // keep **only** the first chunk in the initial render
-      if (treatHeader) bodyData.length = CHUNK_SIZE;
-      else             data.length     = CHUNK_SIZE;
+      if (treatHeader) {
+        bodyData.length = CHUNK_SIZE;
+      } else {
+        data.length = CHUNK_SIZE;
+      }
     }
     /* ────────── END VIRTUAL-SCROLL SUPPORT ────────── */
 
@@ -1149,21 +1162,41 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
     for (const cell of column) {
       const items = cell.split(',').map(item => item.trim());
       for (const item of items){
-        if (item === '') continue;
+        if (item === '') {
+          continue;
+        }
         allEmpty = false;
         const lower = item.toLowerCase();
-        if (!(lower === 'true' || lower === 'false')) allBoolean = false;
-        if (!this.isDate(item)) allDate = false;
+        if (!(lower === 'true' || lower === 'false')) {
+          allBoolean = false;
+        }
+        if (!this.isDate(item)) {
+          allDate = false;
+        }
         const num = Number(item);
-        if (!Number.isInteger(num)) allInteger = false;
-        if (isNaN(num)) allFloat = false;
+        if (!Number.isInteger(num)) {
+          allInteger = false;
+        }
+        if (isNaN(num)) {
+          allFloat = false;
+        }
       }
     }
-    if (allEmpty) return "empty";
-    if (allBoolean) return "boolean";
-    if (allDate) return "date";
-    if (allInteger) return "integer";
-    if (allFloat) return "float";
+    if (allEmpty) {
+      return "empty";
+    }
+    if (allBoolean) {
+      return "boolean";
+    }
+    if (allDate) {
+      return "date";
+    }
+    if (allInteger) {
+      return "integer";
+    }
+    if (allFloat) {
+      return "float";
+    }
     return "string";
   }
 
@@ -1180,7 +1213,9 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
       case "string": hueRange = 0; break;
       case "empty": isDefault = true; break;
     }
-    if (isDefault) return isDark ? "#BBB" : "#444";
+    if (isDefault) {
+      return isDark ? "#BBB" : "#444";
+    }
     const saturationOffset = ((columnIndex * 7) % 31) - 15;
     const saturation = saturationOffset + (isDark ? 60 : 80);
     const lightnessOffset = ((columnIndex * 13) % 31) - 15;

@@ -81,9 +81,11 @@ Cursor (built on VS Code 1.99) and the latest VS Code releases (1.102).
 ## Release Notes
 
 ### v1.1.2
+
 - **Fixed:** fontFamily
 
 ### v1.1.0
+
 - **New:** Column sorting by clicking header labels.
 - **Added:** Font selection dropdown that honors VS Code font settings.
 - **Added:** Ability to create and edit empty CSV files.
@@ -93,6 +95,7 @@ Cursor (built on VS Code 1.99) and the latest VS Code releases (1.102).
 - **Improved:** Safer rendering for cells containing HTML-like text.
 
 ### v1.0.6
+
 - **New:** Multi-cell selection with intuitive `Shift + Click` support.
 - **Enhanced:** Clipboard integration for copying selected cells as clean, CSV-formatted text.
 - **Improved:** Navigation and editing, including better handling of special characters like quotes and commas.
@@ -101,11 +104,13 @@ Cursor (built on VS Code 1.99) and the latest VS Code releases (1.102).
 - **Configurable:** Added `csv.cellPadding` setting to adjust table cell padding.
 
 ### v1.0.2
+
 - **Improved:** Seamless activation of editing mode on double-click.
 - **Fixed:** `Tab` and `Shift + Tab` navigation issues, ensuring smooth cell-to-cell movement.
 - **Updated:** Sticky header styling now consistently matches the active theme.
 
 ### v1.0.0
+
 - **Initial Release:** Introduced a full-featured TSV with interactive cell editing, smart column sizing, and adaptive theme support.
 
 ---
@@ -131,6 +136,7 @@ npm run package
 ## Support
 
 Have questions, suggestions, or encountered an issue?
+
 - Open an issue on [GitHub](https://github.com/jonaraphael/csv/issues) and let us know how we can help!
 
 ---
