@@ -3,42 +3,32 @@ import Papa from 'papaparse';
 import * as vscode from 'vscode';
 
 /**
- * Activates the CSV extension by registering commands and the custom CSV editor.
+ * Activates the TSV extension by registering commands and the custom TSV editor.
  */
 export function activate(context: vscode.ExtensionContext) {
-  console.log('CSV: Extension activated');
+  console.log('TSV: Extension activated');
 
-  // Helper to toggle a boolean CSV configuration and refresh all open CSV editors.
+  // Helper to toggle a boolean TSV configuration and refresh all open TSV editors.
   const toggleBooleanConfig = async (key: string, defaultVal: boolean, messagePrefix: string) => {
-    const config = vscode.workspace.getConfiguration('csv');
+    const config = vscode.workspace.getConfiguration('tsv');
     const currentVal = config.get<boolean>(key, defaultVal);
     const newVal = !currentVal;
     await config.update(key, newVal, vscode.ConfigurationTarget.Global);
     vscode.window.showInformationMessage(`${messagePrefix} ${newVal ? 'enabled' : 'disabled'}.`);
-    CsvEditorProvider.editors.forEach(editor => editor.refresh());
+    TsvEditorProvider.editors.forEach(editor => editor.refresh());
   };
 
-  // Register CSV-related commands.
+  // Register TSV-related commands.
   context.subscriptions.push(
-    vscode.commands.registerCommand('csv.toggleExtension', () =>
-      toggleBooleanConfig('enabled', true, 'CSV extension')
+    vscode.commands.registerCommand('tsv.toggleExtension', () =>
+      toggleBooleanConfig('enabled', true, 'TSV extension')
     ),
-    vscode.commands.registerCommand('csv.toggleHeader', () =>
-      toggleBooleanConfig('treatFirstRowAsHeader', true, 'CSV first row as header is now')
+    vscode.commands.registerCommand('tsv.toggleHeader', () =>
+      toggleBooleanConfig('treatFirstRowAsHeader', true, 'TSV first row as header is now')
     ),
-    vscode.commands.registerCommand('csv.toggleSerialIndex', () =>
-      toggleBooleanConfig('addSerialIndex', false, 'CSV serial index is now')
+    vscode.commands.registerCommand('tsv.toggleSerialIndex', () =>
+      toggleBooleanConfig('addSerialIndex', false, 'TSV serial index is now')
     ),
-    vscode.commands.registerCommand('csv.changeSeparator', async () => {
-      const config = vscode.workspace.getConfiguration('csv');
-      const currentSep = config.get<string>('separator', ',');
-      const input = await vscode.window.showInputBox({ prompt: 'Enter new CSV separator', value: currentSep });
-      if (input !== undefined) {
-        await config.update('separator', input, vscode.ConfigurationTarget.Global);
-        vscode.window.showInformationMessage(`CSV separator changed to "${input}"`);
-        CsvEditorProvider.editors.forEach(editor => editor.refresh());
-      }
-    }),
     vscode.commands.registerCommand('csv.changeFontFamily', async () => {
       const csvCfg     = vscode.workspace.getConfiguration('csv');
       const editorCfg  = vscode.workspace.getConfiguration('editor');
@@ -52,7 +42,7 @@ export function activate(context: vscode.ExtensionContext) {
       try {
         fonts = (await getFonts()).map((f: string) => f.replace(/^"(.*)"$/, '$1')).sort();
       } catch (e) {
-        console.error('CSV: unable to enumerate system fonts', e);
+        console.error('TSV: unable to enumerate system fonts', e);
       }
       const picks = ['(inherit editor setting)', ...fonts];
 
@@ -70,34 +60,34 @@ export function activate(context: vscode.ExtensionContext) {
           : 'CSV font now inherits editor.fontFamily.'
       );
       // Refresh all open CSV editors
-      CsvEditorProvider.editors.forEach(ed => ed.refresh());
+      TsvEditorProvider.editors.forEach(ed => ed.refresh());
     })
 
   );
 
-  // Register the custom editor provider for CSV files.
+  // Register the custom editor provider for TSV files.
   context.subscriptions.push(
     vscode.window.registerCustomEditorProvider(
-      CsvEditorProvider.viewType,
-      new CsvEditorProvider(context),
+      TsvEditorProvider.viewType,
+      new TsvEditorProvider(context),
       { supportsMultipleEditorsPerDocument: false }
     )
   );
 }
 
 /**
- * Deactivates the CSV extension.
+ * Deactivates the TSV extension.
  */
 export function deactivate() {
-  console.log('CSV: Extension deactivated');
+  console.log('TSV: Extension deactivated');
 }
 
 /**
- * Provides a custom CSV editor with an interactive webview.
+ * Provides a custom TSV editor with an interactive webview.
  */
-class CsvEditorProvider implements vscode.CustomTextEditorProvider {
-  public static readonly viewType = 'csv.editor';
-  public static editors: CsvEditorProvider[] = [];
+class TsvEditorProvider implements vscode.CustomTextEditorProvider {
+  public static readonly viewType = 'tsv.editor';
+  public static editors: TsvEditorProvider[] = [];
   private isUpdatingDocument = false;
   private isSaving = false;
   private currentWebviewPanel: vscode.WebviewPanel | undefined;
@@ -106,7 +96,7 @@ class CsvEditorProvider implements vscode.CustomTextEditorProvider {
   constructor(private readonly context: vscode.ExtensionContext) {}
 
   /**
-   * Sets up the CSV editor when a CSV document is opened.
+   * Sets up the TSV editor when a TSV document is opened.
    */
   public async resolveCustomTextEditor(
     document: vscode.TextDocument,
@@ -114,14 +104,14 @@ class CsvEditorProvider implements vscode.CustomTextEditorProvider {
     _token: vscode.CancellationToken
   ): Promise<void> {
     this.document = document;
-    const config = vscode.workspace.getConfiguration('csv');
+    const config = vscode.workspace.getConfiguration('tsv');
     if (!config.get<boolean>('enabled', true)) {
-      vscode.window.showInformationMessage('CSV extension is disabled. Use the command palette to enable it.');
+      vscode.window.showInformationMessage('TSV extension is disabled. Use the command palette to enable it.');
       await vscode.commands.executeCommand('vscode.openWith', document.uri, 'default');
       return;
     }
     this.currentWebviewPanel = webviewPanel;
-    CsvEditorProvider.editors.push(this);
+    TsvEditorProvider.editors.push(this);
     webviewPanel.webview.options = { enableScripts: true };
     this.updateWebviewContent();
     webviewPanel.webview.postMessage({ type: 'focus' });
@@ -142,7 +132,7 @@ class CsvEditorProvider implements vscode.CustomTextEditorProvider {
           break;
         case 'copyToClipboard':
           await vscode.env.clipboard.writeText(e.text);
-          console.log('CSV: Copied to clipboard');
+          console.log('TSV: Copied to clipboard');
           break;
         case 'insertColumn':
           await this.insertColumn(e.index);
@@ -173,7 +163,7 @@ class CsvEditorProvider implements vscode.CustomTextEditorProvider {
     // Clean up subscriptions when the webview is disposed.
     webviewPanel.onDidDispose(() => {
       changeDocumentSubscription.dispose();
-      CsvEditorProvider.editors = CsvEditorProvider.editors.filter(editor => editor !== this);
+      TsvEditorProvider.editors = TsvEditorProvider.editors.filter(editor => editor !== this);
       this.currentWebviewPanel = undefined;
     });
   }
@@ -182,7 +172,7 @@ class CsvEditorProvider implements vscode.CustomTextEditorProvider {
    * Refreshes the webview content or reopens the document in the default editor if disabled.
    */
   public refresh() {
-    const config = vscode.workspace.getConfiguration('csv');
+    const config = vscode.workspace.getConfiguration('tsv');
     if (!config.get<boolean>('enabled', true)) {
       this.currentWebviewPanel?.dispose();
       vscode.commands.executeCommand('vscode.openWith', this.document.uri, 'default');
@@ -236,7 +226,7 @@ class CsvEditorProvider implements vscode.CustomTextEditorProvider {
       await vscode.workspace.applyEdit(edit);
     }
     this.isUpdatingDocument = false;
-    console.log(`CSV: Updated row ${row + 1}, column ${col + 1} to "${value}"`);
+    console.log(`TSV: Updated row ${row + 1}, column ${col + 1} to "${value}"`);
     this.currentWebviewPanel?.webview.postMessage({ type: 'updateCell', row, col, value });
   }
 
@@ -247,9 +237,9 @@ class CsvEditorProvider implements vscode.CustomTextEditorProvider {
     this.isSaving = true;
     try {
       const success = await this.document.save();
-      console.log(success ? 'CSV: Document saved' : 'CSV: Failed to save document');
+      console.log(success ? 'TSV: Document saved' : 'TSV: Failed to save document');
     } catch (error) {
-      console.error('CSV: Error saving document', error);
+      console.error('TSV: Error saving document', error);
     } finally {
       this.isSaving = false;
     }
@@ -350,7 +340,7 @@ class CsvEditorProvider implements vscode.CustomTextEditorProvider {
 
     this.isUpdatingDocument = false;
     this.updateWebviewContent();
-    console.log(`CSV: Sorted column ${index + 1} (${ascending ? 'A-Z' : 'Z-A'})`);
+    console.log(`TSV: Sorted column ${index + 1} (${ascending ? 'A-Z' : 'Z-A'})`);
   }
 
 
@@ -404,10 +394,10 @@ class CsvEditorProvider implements vscode.CustomTextEditorProvider {
   // ───────────── Webview Rendering Methods ─────────────
 
   /**
-   * Parses the CSV text and updates the webview with a rendered HTML table.
+   * Parses the TSV text and updates the webview with a rendered HTML table.
    */
   private updateWebviewContent() {
-    const config = vscode.workspace.getConfiguration('csv');
+    const config = vscode.workspace.getConfiguration('tsv');
     const treatHeader = config.get<boolean>('treatFirstRowAsHeader', true);
     const addSerialIndex = config.get<boolean>('addSerialIndex', false);
     const separator = this.getSeparator();
@@ -415,9 +405,9 @@ class CsvEditorProvider implements vscode.CustomTextEditorProvider {
     let result;
     try {
       result = Papa.parse(text, { dynamicTyping: false, delimiter: separator });
-      console.log(`CSV: Parsed CSV data with ${result.data.length} rows`);
+      console.log(`TSV: Parsed TSV data with ${result.data.length} rows`);
     } catch (error) {
-      console.error('CSV: Error parsing CSV content', error);
+      console.error('TSV: Error parsing TSV content', error);
       result = { data: [] };
     }
     /* Prefer csv.fontFamily if set, otherwise fall back to the workspace-wide editor.fontFamily
@@ -1087,21 +1077,15 @@ class CsvEditorProvider implements vscode.CustomTextEditorProvider {
         widths[i] = Math.max(widths[i], (row[i] || '').length);
       }
     }
-    console.log(`CSV: Column widths: ${widths}`);
+    console.log(`TSV: Column widths: ${widths}`);
     return widths;
   }
 
   /**
-   * Determines the delimiter to use based on configuration and file extension.
-   * `.tsv` files default to a tab separator when the setting is untouched.
+   * Returns the tab delimiter for TSV files.
    */
   private getSeparator(): string {
-    const config = vscode.workspace.getConfiguration('csv');
-    let sep = config.get<string>('separator', ',');
-    if (sep === ',' && this.document?.uri.fsPath.toLowerCase().endsWith('.tsv')) {
-      sep = '\t';
-    }
-    return sep;
+    return '\t';
   }
 
   /**
@@ -1200,4 +1184,4 @@ function getNonce() {
   return text;
 }
 
-export { CsvEditorProvider };
+export { TsvEditorProvider };

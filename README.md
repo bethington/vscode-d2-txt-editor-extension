@@ -1,6 +1,8 @@
-# **CSV**
+# **TSV**
 
-Experience a whole new way to work with CSV files right inside VS Code. CSV transforms your CSV files into an interactive, spreadsheet-like experience—making it effortless to view, edit, and navigate your data with precision and speed.
+Ex## Why TSV?
+
+Working with TSV files shouldn't be a chore. With TSV, you get:ience a whole new way to work with TSV files right inside VS Code. TSV transforms your TSV files into an interactive, spreadsheet-like experience—making it effortless to view, edit, and navigate your data with precision and speed.
 
 ---
 
@@ -15,12 +17,12 @@ Experience a whole new way to work with CSV files right inside VS Code. CSV tran
 
 Working with CSV files shouldn’t be a chore. With CSV, you get:
 
-- **Direct In-Place Editing:** Click on any cell to edit its content seamlessly. Your changes can be saved immediately to the CSV file, ensuring data integrity without extra steps.
+- **Direct In-Place Editing:** Click on any cell to edit its content seamlessly. Your changes can be saved immediately to the TSV file, ensuring data integrity without extra steps.
 - **Smart Column Sizing & Dynamic Color Coding:** Columns automatically adjust to fit content while being visually distinguished by data type. Whether it’s boolean, date, integer, float, or text, each column gets its own adaptive color that adjusts for light and dark themes.
 - **Sticky Headers & Fluid Navigation:** Keep your header row always visible as you scroll. Effortlessly move through cells using intuitive keyboard shortcuts like `Tab`, `Shift + Tab`, and arrow keys—just like a full-featured spreadsheet.
 - **Efficient Multi-Cell Selection & Clipboard Integration:** Select a range of cells with click-and-drag and copy them as well-formatted CSV data using `Ctrl/Cmd + C`.
-- **Robust Data Handling:** Leveraging the power of [Papa Parse](https://www.papaparse.com/), the extension handles complex CSV structures, special characters, and various data types gracefully.
-- **Theme-Optimized Interface:** Whether you prefer light or dark mode, CSV automatically adapts its styles for an optimal viewing experience.
+- **Robust Data Handling:** Leveraging the power of [Papa Parse](https://www.papaparse.com/), the extension handles complex TSV structures, special characters, and various data types gracefully.
+- **Theme-Optimized Interface:** Whether you prefer light or dark mode, TSV automatically adapts its styles for an optimal viewing experience.
 
 ---
 
@@ -31,16 +33,15 @@ Working with CSV files shouldn’t be a chore. With CSV, you get:
 - **Dynamic Color Coding:** Visual cues based on data type help you quickly identify numbers, dates, booleans, and more.
 - **Sticky Headers:** Keep column titles in view as you scroll through large datasets.
 - **Enhanced Keyboard Navigation:** Navigate cells with Tab/Shift+Tab and use keyboard shortcuts for quick editing, saving, selection, and full-table `Ctrl/Cmd + A` select-all.
-- **Advanced Multi-Cell Selection:** Easily select and copy blocks of data, then paste them elsewhere as properly formatted CSV.
+- **Advanced Multi-Cell Selection:** Easily select and copy blocks of data, then paste them elsewhere as properly formatted TSV.
 - **Add/Delete Columns:** Right-click any cell to add a column left or right, or remove the selected column.
-- **Edit Empty CSVs:** Create or open an empty CSV file and start typing immediately.
+- **Edit Empty TSVs:** Create or open an empty TSV file and start typing immediately.
 - **Column Sorting:** Click column headers to sort ascending or descending.
 - **Custom Font Selection:** Choose a font from a dropdown or inherit VS Code's default.
 - **Find & Highlight:** Built-in find widget helps you search for text within your CSV with real-time highlighting and navigation through matches.
-- **Preserved CSV Integrity:** All modifications respect CSV formatting—no unwanted extra characters or formatting issues.
+- **Preserved TSV Integrity:** All modifications respect TSV formatting—no unwanted extra characters or formatting issues.
 - **Optimized for Performance:** Designed for medium-sized datasets, ensuring a smooth editing experience without compromising on functionality.
-- **Large File Support:** Loads big CSVs in chunks so even large datasets open quickly.
-- **TSV Support:** `.tsv` files are recognized automatically and use tabs as the default separator.
+- **Large File Support:** Loads big TSVs in chunks so even large datasets open quickly.
 
 ---
 
@@ -59,7 +60,7 @@ Cursor (built on VS Code 1.99) and the latest VS Code releases (1.102).
 
 ### 2. Open a CSV or TSV File
 
-- Open any `.csv` or `.tsv` file in VS Code.
+- Open any `.tsv` file in VS Code.
 - The file will automatically load, presenting your data in an interactive grid view.
 
 ### 3. Edit and Navigate
@@ -105,7 +106,7 @@ Cursor (built on VS Code 1.99) and the latest VS Code releases (1.102).
 - **Updated:** Sticky header styling now consistently matches the active theme.
 
 ### v1.0.0
-- **Initial Release:** Introduced a full-featured CSV with interactive cell editing, smart column sizing, and adaptive theme support.
+- **Initial Release:** Introduced a full-featured TSV with interactive cell editing, smart column sizing, and adaptive theme support.
 
 ---
 

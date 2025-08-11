@@ -13,15 +13,15 @@ Module.prototype.require = function (id: string) {
   return originalRequire.apply(this, arguments as any);
 };
 
-import { CsvEditorProvider } from '../extension';
+import { TsvEditorProvider } from '../extension';
 
 // Helper to access private methods via type casting
 function getPrivate<T>(obj: any, name: string): T {
   return obj[name] as T;
 }
 
-describe('CsvEditorProvider utility methods', () => {
-  const provider = new CsvEditorProvider({} as any);
+describe('TsvEditorProvider utility methods', () => {
+  const provider = new TsvEditorProvider({} as any);
 
   it('computeColumnWidths returns max length per column', () => {
     const data = [
