@@ -36,9 +36,9 @@ Supports all Diablo II data files including:
 
 ## 📸 Screenshots
 
-| Dark Theme | Light Theme |
-|------------|-------------|
-| ![Dark Theme](images/Screenshot_dark.png) | ![Light Theme](images/Screenshot_light.png) |
+| Dark Theme |
+|------------|
+| ![Dark Theme](images/Screenshot_dark.png) |
 
 ## 🛠️ Installation
 

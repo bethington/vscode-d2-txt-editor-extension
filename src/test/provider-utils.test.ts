@@ -51,8 +51,17 @@ describe('TsvEditorProvider utility methods', () => {
 
   it('getColumnColor returns hex colors', () => {
     const getColor = getPrivate<(t: string, dark: boolean, i: number) => string>(provider, 'getColumnColor').bind(provider);
-    assert.strictEqual(getColor('empty', true, 0), '#BBB');
-    assert.strictEqual(getColor('empty', false, 0), '#444');
+    
+    // Test that colors are based on column index, not data type
+    assert.strictEqual(getColor('empty', true, 0), '#FF6B6B');   // First dark theme color
+    assert.strictEqual(getColor('empty', false, 0), '#C0392B');  // First light theme color
+    assert.strictEqual(getColor('string', true, 1), '#4ECDC4');  // Second dark theme color
+    assert.strictEqual(getColor('boolean', false, 1), '#138D75'); // Second light theme color
+    
+    // Test cycling behavior - index 12 should return first color again
+    assert.strictEqual(getColor('number', true, 12), '#FF6B6B');  // Should cycle back to first
+    
+    // Test that all colors are valid hex
     const hex = getColor('boolean', true, 2);
     assert.match(hex, /^#[0-9a-fA-F]{6}$/);
   });

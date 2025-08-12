@@ -1,39 +1,85 @@
+/**
+ * @fileoverview Diablo II .txt Editor Extension for VS Code
+ * 
+ * This extension provides a custom editor for Diablo II tab-delimited data files,
+ * featuring an interactive spreadsheet-like interface with editing capabilities,
+ * diff mode for comparing base vs modded files, and performance optimizations
+ * for handling large datasets.
+ * 
+ * @author bethington
+ * @version 1.1.3
+ * @since 1.0.0
+ */
+
 import { getFonts } from 'font-list';
 import Papa from 'papaparse';
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
 
-// Type definitions for message events from the webview
+/**
+ * Message interface for communication between webview and extension host.
+ * Used for bidirectional communication to handle user interactions and content updates.
+ */
 interface WebviewMessage {
+  /** The type of message being sent (e.g., 'editCell', 'sortColumn', 'save') */
   type: string;
+  /** Row index for cell-based operations */
   row: number;
+  /** Column index for cell-based operations */
   col: number;
+  /** New value for cell update operations */
   value: string;
+  /** Text content for clipboard operations */
   text: string;
+  /** Index for row/column insertion/deletion operations */
   index: number;
+  /** Sort direction for column sorting (true = ascending, false = descending) */
   ascending: boolean;
 }
 
-// Type definitions for diff comparison
+/**
+ * Represents a single cell in diff comparison mode.
+ * Contains both base game and mod values with comparison status.
+ */
 interface DiffCell {
+  /** The column index of this cell */
   columnIndex: number;
+  /** Value from the base game file */
   baseValue: string;
+  /** Value from the mod file being edited */
   modValue: string;
+  /** Comparison status indicating the type of difference */
   status: 'same' | 'modified' | 'base-only' | 'mod-only';
 }
 
+/**
+ * Represents a complete row in diff comparison mode.
+ * Contains arrays of diff cells and overall row status.
+ */
 interface DiffRow {
+  /** The row index in the current table view */
   rowIndex: number;
+  /** Row index in the base game file (-1 if row doesn't exist in base) */
   baseRowIndex: number;
+  /** Row index in the mod file (-1 if row doesn't exist in mod) */
   modRowIndex: number;
+  /** Array of diff cells that make up this row */
   cells: DiffCell[];
+  /** Overall comparison status for this row */
   status: 'same' | 'modified' | 'base-only' | 'mod-only';
+  /** Whether this row represents a header row */
   isHeader?: boolean;
 }
 
 /**
- * Activates the TSV extension by registering commands and the custom TSV editor.
+ * Activates the Diablo II .txt Editor extension.
+ * 
+ * Registers all commands, the custom editor provider, and sets up the extension
+ * infrastructure. This function is called automatically by VS Code when the
+ * extension is activated based on the activationEvents in package.json.
+ * 
+ * @param context - The extension context provided by VS Code
  */
 export function activate(context: vscode.ExtensionContext) {
   console.log('TSV: Extension activated');
@@ -173,19 +219,44 @@ function isValidDiablo2DataPath(basePath: string): boolean {
 }
 
 /**
- * Deactivates the TSV extension.
+ * Extension deactivation function.
+ * 
+ * Called when the extension is being deactivated. Currently performs
+ * minimal cleanup as VS Code automatically disposes of subscriptions
+ * and providers registered through the extension context.
  */
 export function deactivate() {
   console.log('TSV: Extension deactivated');
 }
 
 /**
- * Provides a custom TSV editor with an interactive webview.
+ * Custom editor provider for Diablo II .txt data files.
+ * 
+ * Implements VS Code's CustomTextEditorProvider interface to provide
+ * a spreadsheet-like editing experience for tab-delimited data files.
+ * Features include:
+ * 
+ * - Interactive table view with cell editing
+ * - Column sorting and data type detection  
+ * - Row/column insertion and deletion
+ * - Diff mode for comparing base vs modded files
+ * - Virtual scrolling for large datasets
+ * - Theme-aware rendering
+ * - Keyboard navigation and accessibility support
+ * 
+ * @implements {vscode.CustomTextEditorProvider}
  */
 class TsvEditorProvider implements vscode.CustomTextEditorProvider {
+  /** The view type identifier for this custom editor */
   public static readonly viewType = 'tsv.editor';
+  
+  /** Array of all active editor instances for broadcasting updates */
   public static editors: TsvEditorProvider[] = [];
+  
+  /** Flag to prevent recursive document updates */
   private isUpdatingDocument = false;
+  
+  /** Flag to track save operations in progress */
   private isSaving = false;
   private currentWebviewPanel: vscode.WebviewPanel | undefined;
   public document!: vscode.TextDocument;
@@ -1599,6 +1670,20 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
 
   /**
    * Computes maximum column widths (in character count) for all columns.
+   * 
+   * Analyzes all rows in the data to determine the maximum character width
+   * needed for each column. This is used for optimal column sizing in the
+   * table display to ensure content is visible without excessive wrapping.
+   * 
+   * @param data - Two-dimensional array of cell values
+   * @returns Array of numbers representing maximum character width per column
+   * 
+   * @example
+   * ```typescript
+   * const data = [['Name', 'Age'], ['John', '25'], ['Alice', '30']];
+   * const widths = this.computeColumnWidths(data);
+   * // Returns [5, 3] (max width of 'Alice' and 'Age')
+   * ```
    */
   private computeColumnWidths(data: string[][]): number[] {
     const numColumns = Math.max(...data.map(row => row.length));
@@ -1620,7 +1705,21 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
   }
 
   /**
-   * Escapes HTML special characters in a string to prevent injection.
+   * Escapes HTML special characters in a string to prevent XSS injection.
+   * 
+   * Converts potentially dangerous HTML characters to their HTML entity
+   * equivalents to ensure safe rendering in the webview. This is a critical
+   * security function that prevents malicious content from being executed.
+   * 
+   * @param text - Raw text content that may contain HTML characters
+   * @returns Escaped string safe for HTML insertion
+   * 
+   * @example
+   * ```typescript
+   * const unsafe = '<script>alert("xss")</script>';
+   * const safe = this.escapeHtml(unsafe);
+   * // Returns: '&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;'
+   * ```
    */
   private escapeHtml(text: string): string {
     return text.replace(/[&<>"']/g, m => ({
@@ -1640,7 +1739,26 @@ class TsvEditorProvider implements vscode.CustomTextEditorProvider {
   }
 
   /**
-   * Estimates the data type of a CSV column based on its content.
+   * Estimates the data type of a column based on its content.
+   * 
+   * Analyzes all values in a column to determine the most appropriate
+   * data type. This enables type-aware rendering with appropriate colors
+   * and formatting. Supports detection of booleans, dates, integers,
+   * floats, empty columns, and defaults to string type.
+   * 
+   * @param column - Array of string values from a single column
+   * @returns String identifier for the detected data type
+   * 
+   * @example
+   * ```typescript
+   * const booleanColumn = ['true', 'false', 'TRUE'];
+   * const type = this.estimateColumnDataType(booleanColumn);
+   * // Returns: 'boolean'
+   * 
+   * const numericColumn = ['1', '2', '3.5'];
+   * const type2 = this.estimateColumnDataType(numericColumn);
+   * // Returns: 'float'
+   * ```
    */
   private estimateColumnDataType(column: string[]): string {
     let allBoolean = true, allDate = true, allInteger = true, allFloat = true, allEmpty = true;

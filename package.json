@@ -3,7 +3,7 @@
   "displayName": "Diablo II .txt Editor",
   "publisher": "bethington",
   "description": "Interactive editor for Diablo II's tab-delimited .txt game data files",
-  "icon": "images/icon.jpg",
+  "icon": "images/icon.png",
   "repository": {
     "type": "git",
     "url": "https://github.com/bethington/vscode-d2-txt-editor-extension"
@@ -470,7 +470,12 @@
     "watch": "tsc -watch -p ./",
     "lint": "eslint **/*.ts",
     "package": "vsce package",
-    "test": "npm run compile && node --test out/test/provider-utils.test.js out/test/security.test.js"
+    "test": "npm run compile && node --test out/test/provider-utils.test.js out/test/security.test.js out/test/performance.test.js out/test/integration.test.js",
+    "test:unit": "npm run compile && node --test out/test/provider-utils.test.js",
+    "test:security": "npm run compile && node --test out/test/security.test.js",
+    "test:performance": "npm run compile && node --test out/test/performance.test.js",
+    "test:integration": "npm run compile && node --test out/test/integration.test.js",
+    "test:coverage": "npm run compile && node --test --experimental-test-coverage out/test/provider-utils.test.js out/test/security.test.js out/test/performance.test.js out/test/integration.test.js"
   },
   "dependencies": {
     "font-list": "^1.5.1",
